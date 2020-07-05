@@ -7,6 +7,18 @@ namespace Parchegram.Model.Post.Request
 {
     public class CreatePostRequest
     {
+        public CreatePostRequest()
+        {
+        }
+
+        public CreatePostRequest(string description, string pathFile, int idUser, int idTypePost)
+        {
+            Description = description;
+            PathFile = pathFile;
+            IdUser = idUser;
+            IdTypePost = idTypePost;
+        }
+
         [MaxLength(3000)]
         public string Description { get; set; }
 

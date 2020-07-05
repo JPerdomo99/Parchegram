@@ -18,6 +18,10 @@ namespace Parchegram.Service.Services.Implementations
     {
         private readonly ILogger _logger;
 
+        public PostService()
+        {
+        }
+
         public PostService(ILogger<PostService> logger)
         {
             _logger = logger;
@@ -37,13 +41,11 @@ namespace Parchegram.Service.Services.Implementations
                     if (createPostRequest.IdTypePost != 3)
                         oPost.PathFile = createPostRequest.PathFile;
 
-                    {
                         db.Post.Add(oPost);
                         if (db.SaveChanges() == 1)
                             return true;
 
-                        return false;
-                    }
+                    return false;
                 }
                 catch (Exception e)
                 {
@@ -62,12 +64,11 @@ namespace Parchegram.Service.Services.Implementations
                     Post oPost = db.Post.Where(p => p.Id == id).FirstOrDefault();
                     db.Remove(oPost);
 
-                    {
-                        if (db.SaveChanges() == 1)
-                            return true;
+                  
+                    if (db.SaveChanges() == 1)
+                        return true;
 
-                        return false;
-                    }
+                    return false;
                 }
                 catch (Exception e)
                 {
@@ -126,12 +127,13 @@ namespace Parchegram.Service.Services.Implementations
                                                 NameUser= user.NameUser
                                             }).FirstOrDefault();
 
+                    if (oPost == null)
+                        return null;
+
                     ILikeService oLikeService = new LikeService();
                     ICommentService oCommentService = new CommentService();
                     oPost.NumLikes = oLikeService.GetNumLikes(oPost.Id);
                     oPost.CommentsByPost = oCommentService.GetCommentsByPost(oPost.Id, true);
-                    if (oPost != null)
-                        return oPost;
 
                     return oPost;
                 }
@@ -150,11 +152,12 @@ namespace Parchegram.Service.Services.Implementations
                 try
                 {
                     User oUser = db.User.Where(u => u.Id == idUser).FirstOrDefault();
-                    IQueryable<PostResponse> queryPosts =
+                    IQueryable<PostResponse> queryPosts =           // Traer los post de los usuarios que sigue un usuario y los compartidos
                                                                     from post in db.Post
                                                                     join follow in db.Follow on oUser equals follow.IdUserFollowerNavigation
                                                                     join user in db.User on follow.IdUserFollower equals user.Id
-                                                                    where post.IdUser == follow.IdUserFollower
+                                                                    join share in db.Share on follow.IdUserFollowing equals share.IdUser
+                                                                    where post.IdUser == follow.IdUserFollower && post.IdUser == share.IdUser
                                                                     orderby post.Date
                                                                     select new PostResponse
                                                                     {
