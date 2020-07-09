@@ -14,7 +14,7 @@ namespace Parchegram.Service.Services.Implementations
     {
         private readonly ILogger _logger;
 
-        public FollowService(ILogger logger)
+        public FollowService(ILogger<FollowService> logger)
         {
             _logger = logger;
         }
@@ -25,7 +25,6 @@ namespace Parchegram.Service.Services.Implementations
             {
                 try
                 {
-
                     Follow follow = GetFollow(followRequest);
 
                     if (follow == null)

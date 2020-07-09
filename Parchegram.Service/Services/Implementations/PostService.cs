@@ -165,14 +165,14 @@ namespace Parchegram.Service.Services.Implementations
                                                                         Description = post.Description,
                                                                         PathFile = post.PathFile,
                                                                         Date = post.Date,
-                                                                        IdTypePost = post.IdTypePost,
+                                                                        IdTypePost = post.IdTypePost,   
                                                                         IdUser = post.IdUser,
                                                                         NameUser = user.NameUser
                                                                     };
 
                     ICollection<PostResponse> lstPost = null;
                     ILikeService oLikeService = new LikeService();
-                    ICommentService oCommentService = new CommentService();
+                    ICommentService oCommentService = new CommentService(); 
                     foreach (PostResponse post in queryPosts)
                     {
                         post.NumLikes = oLikeService.GetNumLikes(post.Id);

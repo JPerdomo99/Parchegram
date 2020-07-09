@@ -19,11 +19,13 @@ namespace Parchegram.WebApi.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IEmailService _emailService;
         private readonly AppSettings _appSettings;
 
-        public UserController(IUserService userService, IOptions<AppSettings> appSettings)
+        public UserController(IUserService userService, IEmailService emailService, IOptions<AppSettings> appSettings)
         {
             _userService = userService;
+            _emailService = emailService;
             _appSettings = appSettings.Value;
         }
 
@@ -35,12 +37,12 @@ namespace Parchegram.WebApi.Controllers
         }
 
         [HttpPost("Login")]
-        public IActionResult Login([FromBody] LoginRequest model)
+        public IActionResult Login([FromBody] LoginRequest loginRequest)
         {
             Response response = new Response();
             if (ModelState.IsValid)
             {
-                var userResponse = _userService.Login(model, _appSettings);
+                var userResponse = _userService.Login(loginRequest, _appSettings);
                 if (userResponse == null)
                 {
                     response.Message = "User does not exist";
@@ -72,7 +74,7 @@ namespace Parchegram.WebApi.Controllers
                     response.Message = "User already exists";
                     response.Success = 0;
                     response.Data = userResponse;
-                    return BadRequest();
+                    return BadRequest(response);
                 }
 
                 response.Message = "Register succcess!";
@@ -84,6 +86,30 @@ namespace Parchegram.WebApi.Controllers
             }
 
             return Ok(response);
+        }
+
+        [HttpPost("ConfirmEmail")]
+        public IActionResult ConfirmEmail([FromBody] string codeConfirmEmail)
+        {
+            if (_emailService.ConfirmEmail(codeConfirmEmail))
+                return Ok();
+
+            return BadRequest();
+        }
+
+        [HttpGet("UserExists/{nameUser}")]
+        public IActionResult UserExists(string nameUser) 
+        {
+            bool result = _userService.UserExists(nameUser);
+
+            return Ok(result);
+        }
+
+        public IActionResult EmailConfirmed([FromRoute] string nameUser)
+        {
+            bool result = _userService.EmailConfirmed(nameUser);
+
+            return Ok(result);
         }
     }
 }

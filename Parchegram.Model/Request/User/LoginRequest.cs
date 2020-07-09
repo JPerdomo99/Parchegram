@@ -8,10 +8,9 @@ namespace Parchegram.Model.User.Request
     public class LoginRequest
     {
         [Required]
-        [EmailAddress]
         [MinLength(5)]
         [MaxLength(100)]
-        public string Email { get; set; }
+        public string NameUser { get; set; }
 
         [Required]
         [MinLength(8)]

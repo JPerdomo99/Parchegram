@@ -13,7 +13,7 @@ namespace Parchegram.Service.Services.Implementations
     {
         private readonly ILogger _logger;
 
-        public LikeService(ILogger logger)
+        public LikeService(ILogger<LikeService> logger)
         {
             _logger = logger;
         }

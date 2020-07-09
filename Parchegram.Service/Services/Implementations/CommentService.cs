@@ -14,7 +14,7 @@ namespace Parchegram.Service.Services.Implementations
     {
         private readonly ILogger _logger;
 
-        public CommentService(ILogger logger)
+        public CommentService(ILogger<CommentService> logger)
         {
             _logger = logger;
         }

@@ -145,6 +145,10 @@ namespace Parchegram.Model.Models
 
             modelBuilder.Entity<User>(entity =>
             {
+                entity.Property(e => e.CodeConfirmEmail)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
                 entity.Property(e => e.DateBirth).HasColumnType("date");
 
                 entity.Property(e => e.Email)
@@ -159,7 +163,6 @@ namespace Parchegram.Model.Models
 
                 entity.Property(e => e.Password)
                     .IsRequired()
-                    .HasColumnName("password")
                     .HasMaxLength(64)
                     .IsUnicode(false);
             });

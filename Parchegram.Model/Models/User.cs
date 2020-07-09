@@ -17,6 +17,8 @@ namespace Parchegram.Model.Models
         public string Email { get; set; }
         public string Password { get; set; }
         public DateTime DateBirth { get; set; }
+        public bool ConfirmEmail { get; set; }
+        public string CodeConfirmEmail { get; set; }
 
         public virtual ICollection<Follow> FollowIdUserFollowerNavigation { get; set; }
         public virtual ICollection<Follow> FollowIdUserFollowingNavigation { get; set; }
