@@ -9,6 +9,7 @@ namespace Parchegram.Model.Models
         {
             FollowIdUserFollowerNavigation = new HashSet<Follow>();
             FollowIdUserFollowingNavigation = new HashSet<Follow>();
+            LogPost = new HashSet<LogPost>();
             Post = new HashSet<Post>();
         }
 
@@ -22,6 +23,7 @@ namespace Parchegram.Model.Models
 
         public virtual ICollection<Follow> FollowIdUserFollowerNavigation { get; set; }
         public virtual ICollection<Follow> FollowIdUserFollowingNavigation { get; set; }
+        public virtual ICollection<LogPost> LogPost { get; set; }
         public virtual ICollection<Post> Post { get; set; }
     }
 }

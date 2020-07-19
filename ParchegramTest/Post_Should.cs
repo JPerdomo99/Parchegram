@@ -21,16 +21,16 @@ namespace ParchegramTest
             _postService = new PostService();
         }
 
-        [Fact]
-        public void CreatePost_ReturnTrue()
-        {
-            CreatePostRequest createPostRequest = new CreatePostRequest("Primer post bien suavata", "", 1, 3);
-            bool result = _postService.CreatePost(createPostRequest);
+        //[Fact]
+        //public void CreatePost_ReturnTrue()
+        //{
+        //    CreatePostRequest createPostRequest = new CreatePostRequest("Primer post bien suavata", "", 1, 3);
+        //    bool result = _postService.CreatePost(createPostRequest);
 
-            Assert.True(result, "Se guardo en la db"); 
-        }
+        //    Assert.True(result, "Se guardo en la db"); 
+        //}
 
-        [Fact]
+        //[Fact]
         public void EditPost_ReturnTrue()
         {
             EditPostRequest editPostRequest = new EditPostRequest(1, "Primer post editado bien suavata", "", 3);
@@ -39,7 +39,7 @@ namespace ParchegramTest
             Assert.True(result, "Se actualizo el post en la db");
         }
 
-        [Fact]
+        //[Fact]
         public void DeletePost_ReturnTrue()
         {
             bool result = _postService.DeletePost(2);
@@ -47,7 +47,7 @@ namespace ParchegramTest
             Assert.True(result, "Se elimino el post de la db");
         }
 
-        [Fact]
+        //[Fact]
         public void GetPostById()
         {
             PostResponse post = _postService.GetPostById(1);

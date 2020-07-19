@@ -11,6 +11,9 @@ using Parchegram.Model.Request.Comment;
 using Parchegram.Model.Response.Comment;
 using Microsoft.Data.SqlClient;
 using Parchegram.Model.Request.Like;
+using Microsoft.AspNetCore.Http;
+using System.IO;
+using Parchegram.Model.Response;
 
 namespace Parchegram.Service.Services.Implementations
 {
@@ -39,11 +42,15 @@ namespace Parchegram.Service.Services.Implementations
                     oPost.IdTypePost = createPostRequest.IdTypePost;
                     oPost.Date = DateTime.Now;
                     if (createPostRequest.IdTypePost != 3)
-                        oPost.PathFile = createPostRequest.PathFile;
+                    {
+                        string pathFile = GetPathFile(createPostRequest.File);
+                        oPost.PathFile = pathFile;
+                        SaveFile(createPostRequest.File);
+                    }
 
-                        db.Post.Add(oPost);
-                        if (db.SaveChanges() == 1)
-                            return true;
+                    db.Post.Add(oPost);
+                    if (db.SaveChanges() == 1)
+                        return true;
 
                     return false;
                 }
@@ -145,49 +152,105 @@ namespace Parchegram.Service.Services.Implementations
             }
         }
 
-        public ICollection<PostResponse> GetPostList(int idUser)
+        public ICollection<PostListResponse> GetPostList(string nameUser)
         {
             using (var db = new ParchegramDBContext())
             {
                 try
                 {
-                    User oUser = db.User.Where(u => u.Id == idUser).FirstOrDefault();
-                    IQueryable<PostResponse> queryPosts =           // Traer los post de los usuarios que sigue un usuario y los compartidos
-                                                                    from post in db.Post
-                                                                    join follow in db.Follow on oUser equals follow.IdUserFollowerNavigation
-                                                                    join user in db.User on follow.IdUserFollower equals user.Id
-                                                                    join share in db.Share on follow.IdUserFollowing equals share.IdUser
-                                                                    where post.IdUser == follow.IdUserFollower && post.IdUser == share.IdUser
-                                                                    orderby post.Date
-                                                                    select new PostResponse
-                                                                    {
-                                                                        Id = post.Id,
-                                                                        Description = post.Description,
-                                                                        PathFile = post.PathFile,
-                                                                        Date = post.Date,
-                                                                        IdTypePost = post.IdTypePost,   
-                                                                        IdUser = post.IdUser,
-                                                                        NameUser = user.NameUser
-                                                                    };
+                    IQueryable<PostListResponse> queryPosts =   from logPost in db.LogPost
+                                                                //join userLogPost in db.User on nameUser equals nameUser
+                                                                join post in db.Post on logPost.IdPost equals post.Id into leftPost // Sacamos los post que coinciden con los registros de logPost
+                                                                from subPost in leftPost.DefaultIfEmpty()
+                                                                join userOwnerPost in db.User on subPost.IdUser equals userOwnerPost.Id into leftUserOwnerPost // Sacamos los dueños de los post
+                                                                from subUserOwnerPost in leftUserOwnerPost.DefaultIfEmpty()
+                                                                join share in db.Share on logPost.IdPost equals share.IdPost into leftShare // Sacamos los share que significa que usuarios que sigo han compartido post de otros
+                                                                from subShare in leftShare.DefaultIfEmpty()
+                                                                join userSharePost in db.User on subShare.IdUser equals userSharePost.Id into leftUserSharePost // Sacamos los usuarios que compartieron el post
+                                                                from subUserSharePost in leftUserSharePost.DefaultIfEmpty()
+                                                                where logPost.IdUserNavigation.NameUser == nameUser
+                                                                orderby logPost.Date descending
+                                                                select new PostListResponse
+                                                                {
+                                                                    // Post
+                                                                    IdPost = subPost.Id,
+                                                                    IdTypePost = subPost.IdTypePost,
+                                                                    Description = subPost.Description,
+                                                                    PathFile = subPost.PathFile,
+                                                                    Date = subPost.Date,
 
-                    ICollection<PostResponse> lstPost = null;
-                    ILikeService oLikeService = new LikeService();
-                    ICommentService oCommentService = new CommentService(); 
-                    foreach (PostResponse post in queryPosts)
+                                                                    // UserOwnerPost
+                                                                    IdUserOwnerPost = subUserOwnerPost.Id,
+                                                                    NameUserOwnerPost = subUserOwnerPost.NameUser,
+
+                                                                    // UserSharePost
+                                                                    IdUserSharePost = subUserSharePost.Id,
+                                                                    NameUserUserSharePost = subUserSharePost.NameUser
+                                                                };
+
+                    ICollection<PostListResponse> listPosts = new List<PostListResponse>();
+                    ILikeService likeService = new LikeService();
+                    ICommentService commentService = new CommentService();
+                    foreach (var post in queryPosts)
                     {
-                        post.NumLikes = oLikeService.GetNumLikes(post.Id);
-                        post.CommentsByPost = oCommentService.GetCommentsByPost(post.Id, false);
-                        lstPost.Add(post);
+                        post.NumLikes = likeService.GetNumLikes(post.IdPost);
+                        post.CommentsByPost = commentService.GetCommentsByPost(post.IdPost, false);
+                        if (post.PathFile != null)
+                            post.File = GetFile(post.PathFile);
+                        listPosts.Add(post);
                     }
                     
-                    return lstPost;
+                    return listPosts;
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
                     return null;
-                } 
+                }
             }
+        }
+
+        private string GetPathFile(IFormFile file)
+        {
+            try
+            {
+                string rootPath = @"C:\Media\Post";
+                string fileName = file.FileName;
+
+                return Path.Combine(rootPath, fileName);
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation(e.Message);
+                return "";
+            }
+        }
+
+        private void SaveFile(IFormFile file)
+        {
+            try
+            {
+                using (var fs = File.Create(GetPathFile(file)))
+                {
+                    file.CopyTo(fs);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation(e.Message);
+            }
+        }
+
+        private byte[] GetFile(string fullPath)
+        {
+            byte[] result;
+            using (FileStream file = File.Open(fullPath, FileMode.Open))
+            {
+                result = new byte[file.Length];
+                file.ReadAsync(result, 0, (int)file.Length);
+            }
+
+            return result;
         }
     }
 }

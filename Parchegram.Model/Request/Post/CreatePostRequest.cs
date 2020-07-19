@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
+using System.IO;
+using System.Text;                  
 
 namespace Parchegram.Model.Post.Request
 {
@@ -11,10 +13,10 @@ namespace Parchegram.Model.Post.Request
         {
         }
 
-        public CreatePostRequest(string description, string pathFile, int idUser, int idTypePost)
+        public CreatePostRequest(string description, IFormFile file, int idUser, int idTypePost)
         {
             Description = description;
-            PathFile = pathFile;
+            File = file;
             IdUser = idUser;
             IdTypePost = idTypePost;
         }
@@ -23,7 +25,7 @@ namespace Parchegram.Model.Post.Request
         public string Description { get; set; }
 
         [DataType(DataType.Upload)]
-        public string PathFile { get; set; }
+        public IFormFile File { get; set; }
 
         [Required]
         public int IdUser { get; set; }

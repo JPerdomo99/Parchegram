@@ -8,7 +8,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Parchegram.Model.Common;
+using Parchegram.Model.Request.User;
 using Parchegram.Model.Response;
+using Parchegram.Model.Response.Post;
 using Parchegram.Model.User.Request;
 using Parchegram.Service.Services.Interfaces;
 
@@ -97,19 +99,44 @@ namespace Parchegram.WebApi.Controllers
             return BadRequest();
         }
 
-        [HttpGet("UserExists/{nameUser}")]
-        public IActionResult UserExists(string nameUser) 
+        [HttpPost("UserExists")]
+        public IActionResult UserExists([FromBody] LoginRequest loginRequest) 
         {
-            bool result = _userService.UserExists(nameUser);
+            bool result = _userService.UserExists(loginRequest);
 
             return Ok(result);
         }
 
+        [HttpGet("EmailConfirmed/{nameUser}")]
         public IActionResult EmailConfirmed([FromRoute] string nameUser)
         {
             bool result = _userService.EmailConfirmed(nameUser);
+            
+            return Ok(result);
+        }
+
+        [HttpGet("NameUserUnique/{nameUser}")]
+        public IActionResult NameUserUnique([FromRoute] string nameUser)
+        {
+            bool result = _userService.NameUserUnique(nameUser);
 
             return Ok(result);
+        }
+
+        [HttpGet("EmailUnique/{email}")]
+        public IActionResult EmailUnique([FromRoute] string email)
+        {
+            bool result = _userService.EmailUnique(email);
+
+            return Ok(result);
+        }
+
+        [HttpPost("UserConfig")]
+        public IActionResult UserConfig([FromForm] ConfigUserRequest configUserRequest)
+        {
+            bool result = _userService.UserConfig(configUserRequest);
+
+            return Ok();
         }
     }
 }

@@ -39,8 +39,10 @@ namespace Parchegram.Service.Services.Implementations
                             return true;
 
                         return false;
+                    } else
+                    {
+                        return true;
                     }
-                    return false;
                 }
                 return false;
             }

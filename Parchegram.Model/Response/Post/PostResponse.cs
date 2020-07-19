@@ -21,5 +21,7 @@ namespace Parchegram.Model.Response.Post
         public string NameUser { get; set; }
 
         public int NumLikes { get; set; }
+
+        public byte[] File { get; set; }
     }
 }

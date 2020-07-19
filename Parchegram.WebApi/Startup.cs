@@ -76,6 +76,7 @@ namespace Parchegram.WebApi
 
             // Dependecy Injection
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IPostService, PostService>();
             services.AddScoped<IEmailService, EmailService>();
         }
 

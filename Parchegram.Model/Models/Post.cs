@@ -5,6 +5,11 @@ namespace Parchegram.Model.Models
 {
     public partial class Post
     {
+        public Post()
+        {
+            LogPost = new HashSet<LogPost>();
+        }
+
         public int Id { get; set; }
         public string Description { get; set; }
         public int IdUser { get; set; }
@@ -14,5 +19,6 @@ namespace Parchegram.Model.Models
 
         public virtual TypePost IdTypePostNavigation { get; set; }
         public virtual User IdUserNavigation { get; set; }
+        public virtual ICollection<LogPost> LogPost { get; set; }
     }
 }

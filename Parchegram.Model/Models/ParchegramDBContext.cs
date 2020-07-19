@@ -18,6 +18,7 @@ namespace Parchegram.Model.Models
         public virtual DbSet<Comment> Comment { get; set; }
         public virtual DbSet<Follow> Follow { get; set; }
         public virtual DbSet<Like> Like { get; set; }
+        public virtual DbSet<LogPost> LogPost { get; set; }
         public virtual DbSet<Post> Post { get; set; }
         public virtual DbSet<Share> Share { get; set; }
         public virtual DbSet<TypePost> TypePost { get; set; }
@@ -89,6 +90,26 @@ namespace Parchegram.Model.Models
                     .HasForeignKey(d => d.IdUser)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Like_User");
+            });
+
+            modelBuilder.Entity<LogPost>(entity =>
+            {
+                entity.HasKey(e => new { e.IdUser, e.IdPost })
+                    .HasName("PK__LogPost__7844EDEC6A80E81C");
+
+                entity.Property(e => e.Date).HasColumnType("datetime");
+
+                entity.HasOne(d => d.IdPostNavigation)
+                    .WithMany(p => p.LogPost)
+                    .HasForeignKey(d => d.IdPost)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_LogPost_Post");
+
+                entity.HasOne(d => d.IdUserNavigation)
+                    .WithMany(p => p.LogPost)
+                    .HasForeignKey(d => d.IdUser)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_LogPost_User");
             });
 
             modelBuilder.Entity<Post>(entity =>
