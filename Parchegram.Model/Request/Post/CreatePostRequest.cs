@@ -21,7 +21,7 @@ namespace Parchegram.Model.Post.Request
             IdTypePost = idTypePost;
         }
 
-        [MaxLength(3000)]
+        [MaxLength(500)]
         public string Description { get; set; }
 
         [DataType(DataType.Upload)]

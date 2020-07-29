@@ -9,6 +9,7 @@ namespace Parchegram.Service.Services.Interfaces
     public interface IShareService
     {
         public bool AddShare(ShareRequest shareRequest);
+
         public bool DeleteShare(ShareRequest shareRequest);
     }
 }

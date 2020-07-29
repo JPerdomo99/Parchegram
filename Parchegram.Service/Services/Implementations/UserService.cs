@@ -1,22 +1,22 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using MimeKit.Cryptography;
 using Parchegram.Model.Common;
 using Parchegram.Model.Models;
 using Parchegram.Model.Request.Email;
 using Parchegram.Model.Request.User;
 using Parchegram.Model.Response;
+using Parchegram.Model.Response.General;
 using Parchegram.Model.User.Request;
+using Parchegram.Service.ClassesSupport;
 using Parchegram.Service.Services.Interfaces;
 using Parchegram.Service.Tools;
 using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Parchegram.Service.Services.Implementations
 {
@@ -26,7 +26,6 @@ namespace Parchegram.Service.Services.Implementations
 
         public UserService()
         {
-
         }
 
         public UserService(ILogger<UserService> logger)
@@ -34,21 +33,32 @@ namespace Parchegram.Service.Services.Implementations
             _logger = logger;
         }
 
-        public UserResponse Login(LoginRequest loginRequest, AppSettings appSettings)
+        public async Task<UserResponse> Login(LoginRequest loginRequest, AppSettings appSettings)
         {
-            UserResponse userReponse = new UserResponse();
             using (var db = new ParchegramDBContext())
             {
                 try
                 {
-                    User user = db.User.Where(u => u.NameUser == loginRequest.NameUser
-                            && u.Password == Encrypt.GetSHA256(loginRequest.Password)).FirstOrDefault();
+                    var user =  (from userLogin in db.User
+                                join userImageProfile in db.UserImageProfile on userLogin.Id equals userImageProfile.IdUser into leftUserImageProfile
+                                from subUserImageProfile in leftUserImageProfile.DefaultIfEmpty()
+                                where userLogin.NameUser == loginRequest.NameUser && userLogin.Password == Encrypt.GetSHA256(loginRequest.Password)
+                                select new { UserLoginResult = userLogin, UserImageProfileResult = subUserImageProfile } ).FirstOrDefault();
+
                     if (user == null)
                         return null;
 
-                    userReponse.NameUser = user.NameUser;
-                    userReponse.Email = user.Email;
-                    userReponse.Token = GetToken(user, appSettings);
+                    UserResponse userResponse = new UserResponse();
+                    userResponse.NameUser = user.UserLoginResult.NameUser;
+                    userResponse.Email = user.UserLoginResult.Email;
+                    if (user.UserImageProfileResult != null)
+                    {
+                        ImageUserProfile imageUserProfile = new ImageUserProfile(false);
+                        userResponse.ImageProfile = await imageUserProfile.ConvertToByteArray(user.UserImageProfileResult.PathImageS);
+                    }
+                    userResponse.Token = GetToken(userResponse, appSettings);
+
+                    return userResponse;
                 }
                 catch (Exception e)
                 {
@@ -56,8 +66,6 @@ namespace Parchegram.Service.Services.Implementations
                     return null;
                 }
             }
-
-            return userReponse;
         }
 
         public UserResponse Register(RegisterRequest registerRequest, AppSettings appSettings)
@@ -83,7 +91,7 @@ namespace Parchegram.Service.Services.Implementations
 
                             userResponse.Email = registerRequest.Email;
                             userResponse.NameUser = registerRequest.NameUser;
-                            userResponse.Token = GetToken(user, appSettings);
+                            userResponse.Token = GetToken(userResponse, appSettings);
 
                             EmailRequest emailRequest = new EmailRequest(user.Email, user.CodeConfirmEmail);
                             IEmailService emailService = new EmailService();
@@ -105,87 +113,197 @@ namespace Parchegram.Service.Services.Implementations
             return userResponse;
         }
 
-        // Se verifica que el nombre de usuario no este ocupado
-        public bool NameUserUnique(string nameUser)
+        /// <summary>
+        /// Verifica que no halla un usuario registrado con ese mismo NameUser
+        /// </summary>
+        /// <param name="nameUser">NameUser del usuario que aspira registrarse</param>
+        /// <returns></returns>
+        public Response NameUserUnique(string nameUser)
         {
+            Response response = new Response();
             using (var db = new ParchegramDBContext())
             {
                 try
                 {
                     User user = db.User.Where(u => u.NameUser == nameUser).FirstOrDefault();
                     if (user == null)
-                        return true;
+                    {
+                        response.Success = 1;
+                        response.Data = true;
+                        response.Message = "Nombre disponible";
 
-                    return false;
+                        return response;
+                    }
+
+                    response.Success = 0;
+                    response.Data = false;
+                    response.Message = "Nombre ocupado";
+
+                    return response;
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    return false;
+                    response.Success = 0;
+                    response.Data = false;
+                    response.Message = $"Error inesperado {e.Message}";
+
+                    return response;
                 }
             }
         }
 
-        // Se verifica que el email no este registrado
-        public bool EmailUnique(string email)
+        /// <summary>
+        /// Verifica que no halla un usuario registrado con ese mismo Email
+        /// </summary>
+        /// <param name="email">Email del usuario que aspira registrarse</param>
+        /// <returns>Response</returns>
+        public Response EmailUnique(string email)
         {
+            Response response = new Response();
             using (var db = new ParchegramDBContext())
             {
                 try
                 {
                     User user = db.User.Where(u => u.Email == email).FirstOrDefault();
                     if (user == null)
-                        return true;
+                    {
+                        response.Success = 1;
+                        response.Data = true;
+                        response.Message = "Email Disponible";
 
-                    return false;
+                        return response;
+                    }
+
+                    response.Success = 0;
+                    response.Data = false;
+                    response.Message = "Email ocupado";
+
+                    return response;
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    return false;
+                    response.Success = 0;
+                    response.Data = false;
+                    response.Message = $"Error inesperado {e.Message}";
+
+                    return response;
                 }
             }
         }
 
-        // Metodo para confirmar la existencia del usuario 
-        // intenta logearse
-        public bool UserExists(LoginRequest loginRequest)
+        /// <summary>
+        /// Método que verifica la existencia del usuario cuando intenta logearse
+        /// </summary>
+        /// <param name="loginRequest">Modelo que mapea los datos del login</param>
+        /// <returns>Response</returns>
+        public async Task<Response> UserExists(LoginRequest loginRequest)
         {
+            Response response = new Response();
             using (var db = new ParchegramDBContext())
             {
                 try
                 {
-                    User user = db.User.Where(u => u.NameUser == loginRequest.NameUser && u.Password == Encrypt.GetSHA256(loginRequest.Password)).FirstOrDefault();
+                    User user = await db.User.Where(u => u.NameUser == loginRequest.NameUser && u.Password == 
+                                Encrypt.GetSHA256(loginRequest.Password)).FirstOrDefaultAsync();
                     if (user == null)
-                        return false;
+                    {
+                        response.Success = 0;
+                        response.Data = false;
+                        response.Message = "El usuario no existe";
 
-                    return true;
+                        return response;
+                    }
+
+                    response.Success = 1;
+                    response.Data = true;
+                    response.Message = "El usuario existe";
+
+                    return response;
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    return false;
+                    response.Success = 0;
+                    response.Data = false;
+                    response.Message = $"Error inespareado {e.Message}";
+
+                    return response;
                 }
             }
         }
 
-        // Metodo que nos permite confirmar la confirmación 
-        // de un email
-        public bool EmailConfirmed(string nameUser)
+        /// <summary>
+        /// Método que verifica que una cuenta ha sido verificada por email
+        /// </summary>
+        /// <param name="nameUser">NameUser para consultar el usuario</param>
+        /// <returns>Response</returns>
+        public async Task<Response> EmailConfirmed(string nameUser)
         {
+            Response response = new Response();
             using (var db = new ParchegramDBContext())
             {
                 try
                 {
-                    User user = db.User.Where(u => u.NameUser == nameUser).FirstOrDefault();
+                    User user = await db.User.Where(u => u.NameUser == nameUser).FirstOrDefaultAsync();
 
                     if (user != null)
+                    {
                         if (user.ConfirmEmail == true)
-                            return true;
-                        else
-                            return false;
+                        {
+                            response.Success = 1;
+                            response.Data = true;
+                            response.Message = "Email confirmado";
 
-                    return false;
+                            return response;
+                        }
+
+                        response.Success = 0;
+                        response.Data = false;
+                        response.Message = "Email no confirmado";
+
+                        return response;
+                    }
+
+                    response.Success = 0;
+                    response.Data = false;
+                    response.Message = "Usuario no existe";
+
+                    return response;
+                }
+                catch (Exception e)
+                {
+                    _logger.LogInformation(e.Message);
+                    response.Success = 0;
+                    response.Data = false;
+                    response.Message = $"Error inespareado {e.Message}";
+
+                    return response;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Entrada del mentodo para llevar a cabo los procesos correspondientes para 
+        /// configurar la cuenta de usuario 
+        /// </summary>
+        /// <param name="configUserRequest">Modelo requerido</param>
+        /// <returns>Bool</returns>
+        public bool UserConfig(ConfigUserRequest configUserRequest)
+        {
+            User user = new User();
+            ImageUserProfile imageProfile = new ImageUserProfile(true);
+            using (var db = new ParchegramDBContext())
+            {
+                try
+                {
+                    user = db.User.Where(u => u.NameUser == configUserRequest.NameUserToken).FirstOrDefault();
+                    if (user != null)
+                    {
+                        if (configUserRequest.ImageProfile != null)
+                            imageProfile.SaveProfileImage(configUserRequest.ImageProfile, user.NameUser);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -193,9 +311,17 @@ namespace Parchegram.Service.Services.Implementations
                     return false;
                 }
             }
+
+            return true;
         }
 
-        private string GetToken(User user, AppSettings appSettings)
+        /// <summary>
+        /// Crea el token segun el Usuario
+        /// </summary>
+        /// <param name="user">Usuario</param>
+        /// <param name="appSettings">Llave secreta para firmar el token</param>
+        /// <returns>Token</returns>
+        private string GetToken(UserResponse userResponse, AppSettings appSettings)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var secret = Encoding.ASCII.GetBytes(appSettings.Secret);
@@ -204,9 +330,8 @@ namespace Parchegram.Service.Services.Implementations
                 Subject = new ClaimsIdentity(
                     new Claim[]
                     {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Email, user.Email),
-                        new Claim(ClaimTypes.UserData, user.NameUser)
+                        new Claim(ClaimTypes.Email, userResponse.Email),
+                        new Claim(ClaimTypes.UserData, userResponse.NameUser)
                     }
                 ),
                 // Expiración del token
@@ -219,36 +344,5 @@ namespace Parchegram.Service.Services.Implementations
 
             return tokenHandler.WriteToken(token);
         }
-
-        #region TestImageProfile
-        /// <summary>
-        /// Entrada del mentodo para llevar a cabo los procesos correspondientes
-        /// </summary>
-        /// <param name="configUserRequest"></param>
-        /// <returns>Bool</returns>
-        public bool UserConfig(ConfigUserRequest configUserRequest)
-        {
-            byte[] imageProfile = ConvertToByteArray(configUserRequest.ImageProfile);
-
-            return true;
-        }
-
-        private byte[] ConvertToByteArray(IFormFile formFile)
-        {
-            byte[] fileBytes = null;
-            if (formFile.Length > 0)
-            {
-                using (var ms = new MemoryStream())
-                {
-                    formFile.CopyTo(ms);
-                    fileBytes = ms.ToArray();
-                    string s = Convert.ToBase64String(fileBytes);
-                    // act on the Base64 data
-                }
-            }
-
-            return fileBytes;
-        }
-        #endregion
     }
 }

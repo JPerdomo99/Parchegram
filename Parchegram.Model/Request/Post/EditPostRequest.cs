@@ -22,7 +22,7 @@ namespace Parchegram.Model.Request.Post
         [Required]
         public int Id { get; set; }
 
-        [MaxLength(3000)]
+        [MaxLength(500)]
         public string Description { get; set; }
 
         [DataType(DataType.Upload)]

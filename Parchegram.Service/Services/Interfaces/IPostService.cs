@@ -14,9 +14,13 @@ namespace Parchegram.Service.Services.Interfaces
     public interface IPostService
     {
         public bool CreatePost(CreatePostRequest createPostRequest);
+
         public bool EditPost(EditPostRequest editPostRequest);
+
         public bool DeletePost(int id);
+
         public ICollection<PostListResponse> GetPostList(string nameUser);
+
         public PostResponse GetPostById(int id);
     }
 }

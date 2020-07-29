@@ -8,7 +8,9 @@ namespace Parchegram.Service.Services.Interfaces
     public interface ILikeService
     {
         public bool AddLike(LikeRequest likeRequest);
+
         public int GetNumLikes(int idPost);
+
         public bool DeleteLike(LikeRequest likeRequest);
     }
 }

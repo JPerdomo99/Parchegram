@@ -23,13 +23,14 @@ namespace Parchegram.Model.Models
         public virtual DbSet<Share> Share { get; set; }
         public virtual DbSet<TypePost> TypePost { get; set; }
         public virtual DbSet<User> User { get; set; }
+        public virtual DbSet<UserImageProfile> UserImageProfile { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseSqlServer("Server=localhost;Database=ParchegramDB;Trusted_Connection=True;");
+                optionsBuilder.UseSqlServer("Server=localhost;Database=ParchegramDB;Trusted_Connection=True");
             }
         }
 
@@ -186,6 +187,25 @@ namespace Parchegram.Model.Models
                     .IsRequired()
                     .HasMaxLength(64)
                     .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<UserImageProfile>(entity =>
+            {
+                entity.Property(e => e.PathImageM)
+                    .IsRequired()
+                    .HasMaxLength(1000)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PathImageS)
+                    .IsRequired()
+                    .HasMaxLength(1000)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.IdUserNavigation)
+                    .WithMany(p => p.UserImageProfile)
+                    .HasForeignKey(d => d.IdUser)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_UserImageProfile_User");
             });
 
             OnModelCreatingPartial(modelBuilder);

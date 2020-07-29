@@ -10,6 +10,8 @@ namespace Parchegram.Model.Response
 
         public string NameUser { get; set; }
 
+        public byte[] ImageProfile { get; set; }
+
         public string Token { get; set; }
     }
 }

@@ -8,6 +8,7 @@ namespace Parchegram.Service.Services.Interfaces
     public interface IEmailService
     {
         public void SendEmail(EmailRequest emailRequest);
+
         public bool ConfirmEmail(string codeConfirmEmail);
     }
 }

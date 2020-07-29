@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Parchegram.Model.Response
+namespace Parchegram.Model.Response.General
 {
     public class Response
     {

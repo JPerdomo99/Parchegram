@@ -1,4 +1,5 @@
-﻿using Parchegram.Service.Services.Implementations;
+﻿using Parchegram.Model.Response.General;
+using Parchegram.Service.Services.Implementations;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -18,7 +19,8 @@ namespace ParchegramTest
         [Fact]
         public void NameUserUnique_ReturnFalse()
         {
-            bool result = _userService.NameUserUnique("Julian1999");
+            Response response = _userService.NameUserUnique("Julian1999");
+            bool result = Convert.ToBoolean(response.Data);
 
             Assert.False(result, "Nombre de usuario ocupado");
         }
@@ -26,7 +28,8 @@ namespace ParchegramTest
         [Fact]
         public void EmailUnique_ReturnFalse()
         {
-            bool result = _userService.EmailUnique("atehortua199@gmail.com");
+            Response response = _userService.EmailUnique("atehortua199@gmail.com");
+            bool result = Convert.ToBoolean(response.Data);
 
             Assert.False(result, "El email ya esta en uso");
         }

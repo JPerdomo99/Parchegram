@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Parchegram.Model.Common;
 using Parchegram.Model.Request.User;
-using Parchegram.Model.Response;
-using Parchegram.Model.Response.Post;
+using Parchegram.Model.Response.General;
 using Parchegram.Model.User.Request;
 using Parchegram.Service.Services.Interfaces;
+using System.Threading.Tasks;
 
 namespace Parchegram.WebApi.Controllers
 {
@@ -39,12 +33,12 @@ namespace Parchegram.WebApi.Controllers
         }
 
         [HttpPost("Login")]
-        public IActionResult Login([FromBody] LoginRequest loginRequest)
+        public async  Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
             Response response = new Response();
             if (ModelState.IsValid)
             {
-                var userResponse = _userService.Login(loginRequest, _appSettings);
+                var userResponse = await _userService.Login(loginRequest, _appSettings);
                 if (userResponse == null)
                 {
                     response.Message = "User does not exist";
@@ -56,7 +50,8 @@ namespace Parchegram.WebApi.Controllers
                 response.Message = "Login success!";
                 response.Success = 1;
                 response.Data = userResponse;
-            } else
+            }
+            else
             {
                 return BadRequest(ModelState);
             }
@@ -82,7 +77,8 @@ namespace Parchegram.WebApi.Controllers
                 response.Message = "Register succcess!";
                 response.Success = 1;
                 response.Data = userResponse;
-            } else
+            }
+            else
             {
                 return BadRequest(ModelState);
             }
@@ -100,25 +96,25 @@ namespace Parchegram.WebApi.Controllers
         }
 
         [HttpPost("UserExists")]
-        public IActionResult UserExists([FromBody] LoginRequest loginRequest) 
+        public async Task<IActionResult> UserExists([FromBody] LoginRequest loginRequest)
         {
-            bool result = _userService.UserExists(loginRequest);
+            Response result = await _userService.UserExists(loginRequest);
 
             return Ok(result);
         }
 
         [HttpGet("EmailConfirmed/{nameUser}")]
-        public IActionResult EmailConfirmed([FromRoute] string nameUser)
+        public async Task<IActionResult> EmailConfirmed([FromRoute] string nameUser)
         {
-            bool result = _userService.EmailConfirmed(nameUser);
-            
+            Response result = await _userService.EmailConfirmed(nameUser);
+
             return Ok(result);
         }
 
         [HttpGet("NameUserUnique/{nameUser}")]
         public IActionResult NameUserUnique([FromRoute] string nameUser)
         {
-            bool result = _userService.NameUserUnique(nameUser);
+            Response result = _userService.NameUserUnique(nameUser);
 
             return Ok(result);
         }
@@ -126,7 +122,7 @@ namespace Parchegram.WebApi.Controllers
         [HttpGet("EmailUnique/{email}")]
         public IActionResult EmailUnique([FromRoute] string email)
         {
-            bool result = _userService.EmailUnique(email);
+            Response result = _userService.EmailUnique(email);
 
             return Ok(result);
         }
