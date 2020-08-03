@@ -7,6 +7,7 @@ using Parchegram.Model.Request.Email;
 using Parchegram.Model.Request.User;
 using Parchegram.Model.Response;
 using Parchegram.Model.Response.General;
+using Parchegram.Model.Response.User;
 using Parchegram.Model.User.Request;
 using Parchegram.Service.ClassesSupport;
 using Parchegram.Service.Services.Interfaces;
@@ -14,6 +15,7 @@ using Parchegram.Service.Tools;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -286,33 +288,109 @@ namespace Parchegram.Service.Services.Implementations
 
         /// <summary>
         /// Entrada del mentodo para llevar a cabo los procesos correspondientes para 
-        /// configurar la cuenta de usuario 
+        /// configurar la cuenta de usuario
         /// </summary>
         /// <param name="configUserRequest">Modelo requerido</param>
-        /// <returns>Bool</returns>
-        public bool UserConfig(ConfigUserRequest configUserRequest)
+        /// <returns>Respuesta que confirma el exito del proceso</returns>
+        public async Task<Response> UserConfig(ConfigUserRequest configUserRequest)
         {
-            User user = new User();
+            Response response = new Response();
             ImageUserProfile imageProfile = new ImageUserProfile(true);
+
             using (var db = new ParchegramDBContext())
             {
                 try
                 {
-                    user = db.User.Where(u => u.NameUser == configUserRequest.NameUserToken).FirstOrDefault();
+                    var user = await db.User.Where(u => u.NameUser == configUserRequest.NameUserToken).FirstOrDefaultAsync();
                     if (user != null)
                     {
                         if (configUserRequest.ImageProfile != null)
                             imageProfile.SaveProfileImage(configUserRequest.ImageProfile, user.NameUser);
                     }
+                    else
+                    {
+                        response.Success = 0;
+                        response.Data = false;
+                        response.Message = "El usuario no existe";
+
+                        return response;
+                    }
+
+                    response.Success = 1;
+                    response.Data = true;
+                    response.Message = "Usuario actualizado correctamente";
+
+                    return response;
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    return false;
+                    response.Success = 0;
+                    response.Data = false;
+                    response.Message = $"Ha ocurrido un error {e.Message}";
+
+                    return response;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Metodo que devuelve un response con datos del Usuario recien actualizado
+        /// para almacenar en la sessión del cliente
+        /// </summary>
+        /// <param name="nameUser">NameUser del usuario que se ha actualizado</param>
+        /// <returns>Respuesta que contiene datos del usuario</returns>
+        public async Task<Response> GetUserConfigResponse(string nameUser)
+        {
+            Response response = new Response();
+
+            using (var db = new ParchegramDBContext())
+            {
+                try
+                {
+                    var userConfig = (from user in db.User
+                                    join userImageProfile in db.UserImageProfile on user.Id equals userImageProfile.IdUser into leftUserImageProfile
+                                    from subUserImageProfile in leftUserImageProfile.DefaultIfEmpty()
+                                    where user.NameUser == nameUser 
+                                    select new { user.NameUser, subUserImageProfile.PathImageS }).FirstOrDefault();
+
+                    if (userConfig == null)
+                    {
+                        response.Success = 0;
+                        response.Data = null;
+                        response.Message = "El usuario no existe";
+
+                        return response;
+                    }
+
+                    ImageUserProfile imageUserProfile = new ImageUserProfile(false);
+                    UserConfigResponse userConfigResponse = new UserConfigResponse();
+                    userConfigResponse.NameUser = userConfig.NameUser;
+                    try
+                    {
+                        userConfigResponse.ImageProfile = await imageUserProfile.ConvertToByteArray(userConfig.PathImageS);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogInformation(e.Message);
+                        userConfigResponse.ImageProfile = null;
+                    }
+
+                    response.Success = 1;
+                    response.Data = userConfigResponse;
+                    response.Message = "Datos obtenidos correctamente";
+                }
+                catch (Exception e)
+                {
+                    _logger.LogInformation(e.Message);
+                    response.Success = 0;
+                    response.Data = null;
+                    response.Message = $"Error al obtener los datos {e.Message}";
+                    throw;
                 }
             }
 
-            return true;
+            return response;
         }
 
         /// <summary>

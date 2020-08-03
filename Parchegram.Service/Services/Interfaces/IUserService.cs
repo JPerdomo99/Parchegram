@@ -24,6 +24,8 @@ namespace Parchegram.Service.Services.Interfaces
 
         public Task<Response> EmailConfirmed(string nameUser);
 
-        public bool UserConfig(ConfigUserRequest configUserRequest);
+        public Task<Response> UserConfig(ConfigUserRequest configUserRequest);
+
+        public Task<Response> GetUserConfigResponse(string nameUser);
     }
 }

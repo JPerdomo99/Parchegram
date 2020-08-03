@@ -15,13 +15,14 @@ namespace Parchegram.Service.ClassesSupport
         // Create filePath on base to rootPath and fileName
         private Func<IFormFile, string, string> _createPath;
 
-        // Constructor
+        // Constructor Manejamos el dato bool para identificar si se setea _createPath
         public ImageUserProfile(bool createPath)
         {
             if (createPath)
                 _createPath = (formFile, size) => @$"C:\Media\Profile\{size}\{size}{Guid.NewGuid()}${formFile.FileName}";
         }
 
+        // Constructor que mantiene el logger
         public ImageUserProfile(ILogger<ImageUserProfile> logger)
         {
             _logger = logger;
@@ -133,7 +134,7 @@ namespace Parchegram.Service.ClassesSupport
                     try
                     {
                         User user = db.User.Where(u => u.NameUser == nameUser).FirstOrDefault();
-                        UserImageProfile userImageProfile = new UserImageProfile();
+                        UserImageProfile userImageProfile = db.UserImageProfile.Where(u => u.IdUser == user.Id).FirstOrDefault();
                         for (int i = 0; i < images.Length; i++)
                         {
                             try
@@ -151,7 +152,12 @@ namespace Parchegram.Service.ClassesSupport
                             }
                         }
                         userImageProfile.IdUser = user.Id;
-                        db.UserImageProfile.Add(userImageProfile);
+
+                        if (userImageProfile == null)
+                            db.UserImageProfile.Add(userImageProfile);
+                        else
+                            db.UserImageProfile.Update(userImageProfile);
+
                         db.SaveChanges();
                     }
                     catch (Exception e)

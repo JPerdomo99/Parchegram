@@ -1,19 +1,15 @@
-﻿using Parchegram.Model.Models;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Parchegram.Model.Models;
 using Parchegram.Model.Post.Request;
 using Parchegram.Model.Request.Post;
+using Parchegram.Model.Response;
+using Parchegram.Model.Response.Post;
 using Parchegram.Service.Services.Interfaces;
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using System.Linq;
-using Parchegram.Model.Response.Post;
-using Parchegram.Model.Request.Comment;
-using Parchegram.Model.Response.Comment;
-using Microsoft.Data.SqlClient;
-using Parchegram.Model.Request.Like;
-using Microsoft.AspNetCore.Http;
 using System.IO;
-using Parchegram.Model.Response;
+using System.Linq;
 
 namespace Parchegram.Service.Services.Implementations
 {
@@ -71,7 +67,7 @@ namespace Parchegram.Service.Services.Implementations
                     Post oPost = db.Post.Where(p => p.Id == id).FirstOrDefault();
                     db.Remove(oPost);
 
-                  
+
                     if (db.SaveChanges() == 1)
                         return true;
 
@@ -102,7 +98,7 @@ namespace Parchegram.Service.Services.Implementations
                     db.Post.Update(oPost);
                     if (db.SaveChanges() == 1)
                         return true;
-                    
+
                     return false;
                 }
                 catch (Exception e)
@@ -121,18 +117,18 @@ namespace Parchegram.Service.Services.Implementations
                 {
                     PostResponse oPost =
                                             (from post in db.Post
-                                            join user in db.User on post.IdUser equals user.Id
-                                            where post.IdUser == id
-                                            select new PostResponse
-                                            {
-                                                Id = post.Id,
-                                                Description = post.Description,
-                                                PathFile = post.PathFile,
-                                                Date = post.Date,
-                                                IdTypePost = post.IdTypePost,
-                                                IdUser = post.IdUser,
-                                                NameUser= user.NameUser
-                                            }).FirstOrDefault();
+                                             join user in db.User on post.IdUser equals user.Id
+                                             where post.IdUser == id
+                                             select new PostResponse
+                                             {
+                                                 Id = post.Id,
+                                                 Description = post.Description,
+                                                 PathFile = post.PathFile,
+                                                 Date = post.Date,
+                                                 IdTypePost = post.IdTypePost,
+                                                 IdUser = post.IdUser,
+                                                 NameUser = user.NameUser
+                                             }).FirstOrDefault();
 
                     if (oPost == null)
                         return null;
@@ -158,35 +154,35 @@ namespace Parchegram.Service.Services.Implementations
             {
                 try
                 {
-                    IQueryable<PostListResponse> queryPosts =   from logPost in db.LogPost
-                                                                //join userLogPost in db.User on nameUser equals nameUser
-                                                                join post in db.Post on logPost.IdPost equals post.Id into leftPost // Sacamos los post que coinciden con los registros de logPost
-                                                                from subPost in leftPost.DefaultIfEmpty()
-                                                                join userOwnerPost in db.User on subPost.IdUser equals userOwnerPost.Id into leftUserOwnerPost // Sacamos los dueños de los post
-                                                                from subUserOwnerPost in leftUserOwnerPost.DefaultIfEmpty()
-                                                                join share in db.Share on logPost.IdPost equals share.IdPost into leftShare // Sacamos los share que significa que usuarios que sigo han compartido post de otros
-                                                                from subShare in leftShare.DefaultIfEmpty()
-                                                                join userSharePost in db.User on subShare.IdUser equals userSharePost.Id into leftUserSharePost // Sacamos los usuarios que compartieron el post
-                                                                from subUserSharePost in leftUserSharePost.DefaultIfEmpty()
-                                                                where logPost.IdUserNavigation.NameUser == nameUser
-                                                                orderby logPost.Date descending
-                                                                select new PostListResponse
-                                                                {
-                                                                    // Post
-                                                                    IdPost = subPost.Id,
-                                                                    IdTypePost = subPost.IdTypePost,
-                                                                    Description = subPost.Description,
-                                                                    PathFile = subPost.PathFile,
-                                                                    Date = subPost.Date,
+                    IQueryable<PostListResponse> queryPosts = from logPost in db.LogPost
+                                                                  //join userLogPost in db.User on nameUser equals nameUser
+                                                              join post in db.Post on logPost.IdPost equals post.Id into leftPost // Sacamos los post que coinciden con los registros de logPost
+                                                              from subPost in leftPost.DefaultIfEmpty()
+                                                              join userOwnerPost in db.User on subPost.IdUser equals userOwnerPost.Id into leftUserOwnerPost // Sacamos los dueños de los post
+                                                              from subUserOwnerPost in leftUserOwnerPost.DefaultIfEmpty()
+                                                              join share in db.Share on logPost.IdPost equals share.IdPost into leftShare // Sacamos los share que significa que usuarios que sigo han compartido post de otros
+                                                              from subShare in leftShare.DefaultIfEmpty()
+                                                              join userSharePost in db.User on subShare.IdUser equals userSharePost.Id into leftUserSharePost // Sacamos los usuarios que compartieron el post
+                                                              from subUserSharePost in leftUserSharePost.DefaultIfEmpty()
+                                                              where logPost.IdUserNavigation.NameUser == nameUser
+                                                              orderby logPost.Date descending
+                                                              select new PostListResponse
+                                                              {
+                                                                  // Post
+                                                                  IdPost = subPost.Id,
+                                                                  IdTypePost = subPost.IdTypePost,
+                                                                  Description = subPost.Description,
+                                                                  PathFile = subPost.PathFile,
+                                                                  Date = subPost.Date,
 
-                                                                    // UserOwnerPost
-                                                                    IdUserOwnerPost = subUserOwnerPost.Id,
-                                                                    NameUserOwnerPost = subUserOwnerPost.NameUser,
+                                                                  // UserOwnerPost
+                                                                  IdUserOwnerPost = subUserOwnerPost.Id,
+                                                                  NameUserOwnerPost = subUserOwnerPost.NameUser,
 
-                                                                    // UserSharePost
-                                                                    IdUserSharePost = subUserSharePost.Id,
-                                                                    NameUserUserSharePost = subUserSharePost.NameUser
-                                                                };
+                                                                  // UserSharePost
+                                                                  IdUserSharePost = subUserSharePost.Id,
+                                                                  NameUserUserSharePost = subUserSharePost.NameUser
+                                                              };
 
                     ICollection<PostListResponse> listPosts = new List<PostListResponse>();
                     ILikeService likeService = new LikeService();
@@ -199,7 +195,7 @@ namespace Parchegram.Service.Services.Implementations
                             post.File = GetFile(post.PathFile);
                         listPosts.Add(post);
                     }
-                    
+
                     return listPosts;
                 }
                 catch (Exception e)

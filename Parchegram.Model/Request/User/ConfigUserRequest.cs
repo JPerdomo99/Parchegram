@@ -10,7 +10,7 @@ namespace Parchegram.Model.Request.User
     {
         [Required]
         [MinLength(1)]
-        [MaxLength(100)]
+        [MaxLength(40)]
         public string NameUserToken { get; set; }
 
         [MinLength(1)]

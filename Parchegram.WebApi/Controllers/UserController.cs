@@ -128,11 +128,16 @@ namespace Parchegram.WebApi.Controllers
         }
 
         [HttpPost("UserConfig")]
-        public IActionResult UserConfig([FromForm] ConfigUserRequest configUserRequest)
+        public async Task<IActionResult> UserConfig([FromForm] ConfigUserRequest configUserRequest)
         {
-            bool result = _userService.UserConfig(configUserRequest);
+            Response response = await _userService.UserConfig(configUserRequest);
 
-            return Ok();
-        }
+            if (response.Success == 0)
+                return Ok(response);
+
+            response = await _userService.GetUserConfigResponse(configUserRequest.NameUser);
+
+            return Ok(response);
+        }   
     }
 }
