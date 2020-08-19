@@ -1,8 +1,7 @@
-﻿using Parchegram.Model.Response.General;
+﻿using Parchegram.Model.Request.User;
+using Parchegram.Model.Response.General;
 using Parchegram.Service.Services.Implementations;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace ParchegramTest
@@ -32,6 +31,17 @@ namespace ParchegramTest
             bool result = Convert.ToBoolean(response.Data);
 
             Assert.False(result, "El email ya esta en uso");
+        }
+
+        [Fact]
+        public async void UserConfig_ReturnFalse()
+        {
+            ConfigUserRequest configUserRequest = new ConfigUserRequest();
+            configUserRequest.NameUserToken = "Julian1234";
+            Response response = await _userService.UserConfig(configUserRequest);
+            bool result = Convert.ToBoolean(response.Data);
+
+            Assert.False(result, "El usuario no existe");
         }
     }
 }

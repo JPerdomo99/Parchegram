@@ -15,7 +15,6 @@ using Parchegram.Service.Tools;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
-using System.Runtime.Versioning;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,11 +40,11 @@ namespace Parchegram.Service.Services.Implementations
             {
                 try
                 {
-                    var user =  (from userLogin in db.User
+                    var user = (from userLogin in db.User
                                 join userImageProfile in db.UserImageProfile on userLogin.Id equals userImageProfile.IdUser into leftUserImageProfile
                                 from subUserImageProfile in leftUserImageProfile.DefaultIfEmpty()
                                 where userLogin.NameUser == loginRequest.NameUser && userLogin.Password == Encrypt.GetSHA256(loginRequest.Password)
-                                select new { UserLoginResult = userLogin, UserImageProfileResult = subUserImageProfile } ).FirstOrDefault();
+                                select new { UserLoginResult = userLogin, UserImageProfileResult = subUserImageProfile }).FirstOrDefault();
 
                     if (user == null)
                         return null;
@@ -207,7 +206,7 @@ namespace Parchegram.Service.Services.Implementations
             {
                 try
                 {
-                    User user = await db.User.Where(u => u.NameUser == loginRequest.NameUser && u.Password == 
+                    User user = await db.User.Where(u => u.NameUser == loginRequest.NameUser && u.Password ==
                                 Encrypt.GetSHA256(loginRequest.Password)).FirstOrDefaultAsync();
                     if (user == null)
                     {
@@ -295,7 +294,27 @@ namespace Parchegram.Service.Services.Implementations
         public async Task<Response> UserConfig(ConfigUserRequest configUserRequest)
         {
             Response response = new Response();
-            ImageUserProfile imageProfile = new ImageUserProfile(true);
+
+            // Validamos la imagen (extensión y tamaño)
+            if (configUserRequest.ImageProfile != null)
+            {
+                if (!validateExtensionImage(configUserRequest.ImageProfile.ContentType))
+                {
+                    response.Success = 0;
+                    response.Data = false;
+                    response.Message = $"Formato de imagen no valido {configUserRequest.ImageProfile.ContentType}";
+
+                    return response;
+                }
+                if (!validateSizeImage(configUserRequest.ImageProfile.Length))
+                {
+                    response.Success = 0;
+                    response.Data = false;
+                    response.Message = $"Máximo 5MB para el archivo: {ConvertToMegabytes(configUserRequest.ImageProfile.Length)}";
+
+                    return response;
+                }
+            }
 
             using (var db = new ParchegramDBContext())
             {
@@ -304,8 +323,16 @@ namespace Parchegram.Service.Services.Implementations
                     var user = await db.User.Where(u => u.NameUser == configUserRequest.NameUserToken).FirstOrDefaultAsync();
                     if (user != null)
                     {
+                        if (configUserRequest.NameUser != null)
+                        {
+                            user.NameUser = configUserRequest.NameUser;
+                            await db.SaveChangesAsync();
+                        }
                         if (configUserRequest.ImageProfile != null)
-                            imageProfile.SaveProfileImage(configUserRequest.ImageProfile, user.NameUser);
+                        {
+                            ImageUserProfile imageUserProfile = new ImageUserProfile(true);
+                            imageUserProfile.SaveProfileImage(configUserRequest.ImageProfile, user.NameUser);
+                        }
                     }
                     else
                     {
@@ -340,7 +367,7 @@ namespace Parchegram.Service.Services.Implementations
         /// </summary>
         /// <param name="nameUser">NameUser del usuario que se ha actualizado</param>
         /// <returns>Respuesta que contiene datos del usuario</returns>
-        public async Task<Response> GetUserConfigResponse(string nameUser)
+        public async Task<Response> GetUserConfigResponse(ConfigUserRequest configUserRequest)
         {
             Response response = new Response();
 
@@ -349,10 +376,10 @@ namespace Parchegram.Service.Services.Implementations
                 try
                 {
                     var userConfig = (from user in db.User
-                                    join userImageProfile in db.UserImageProfile on user.Id equals userImageProfile.IdUser into leftUserImageProfile
-                                    from subUserImageProfile in leftUserImageProfile.DefaultIfEmpty()
-                                    where user.NameUser == nameUser 
-                                    select new { user.NameUser, subUserImageProfile.PathImageS }).FirstOrDefault();
+                                      join userImageProfile in db.UserImageProfile on user.Id equals userImageProfile.IdUser into leftUserImageProfile
+                                      from subUserImageProfile in leftUserImageProfile.DefaultIfEmpty()
+                                      where user.NameUser == configUserRequest.NameUser || user.NameUser == configUserRequest.NameUserToken
+                                      select new { user.NameUser, subUserImageProfile.PathImageS }).FirstOrDefault();
 
                     if (userConfig == null)
                     {
@@ -421,6 +448,53 @@ namespace Parchegram.Service.Services.Implementations
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
             return tokenHandler.WriteToken(token);
+        }
+
+        /// <summary>
+        /// Valida la extensión de la imagen
+        /// </summary>
+        /// <param name="extension">Extensión que se espera que este en el arreglo</param>
+        /// <returns>bool</returns>
+        private bool validateExtensionImage(string extension)
+        {
+            try
+            {
+                string[] Extensions = { "image/jpeg", "image/jpg", "image/png", "image/x-icon", "image/svg+xml", "image/gif" };
+                string result = Extensions.FirstOrDefault(e => e.Equals(extension));
+
+                return (result != null) ? true : false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Valida que el archivo no pese mas de 5 megas
+        /// </summary>
+        /// <param name="size">Tamaño del archivo en bytes</param>
+        /// <returns>bool</returns>
+        private bool validateSizeImage(long size)
+        {
+            return (size <= 5000000) ? true : false;
+        }
+
+        /// <summary>
+        /// Convierte bytes en megabytes para mandar como mensaje de respuesta
+        /// </summary>
+        /// <param name="size">Tamaño del archivo en bytes</param>
+        /// <returns>Tamaño del archivo en megabytes con 2 decimales</returns>
+        private double ConvertToMegabytes(long size)
+        {
+            try
+            {
+                return Math.Round(Convert.ToDouble(size) / 1048576, 2);
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
         }
     }
 }

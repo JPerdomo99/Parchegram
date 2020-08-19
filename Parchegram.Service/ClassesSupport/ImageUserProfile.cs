@@ -37,16 +37,14 @@ namespace Parchegram.Service.ClassesSupport
                     User user = db.User.Where(u => u.NameUser == nameUser).FirstOrDefault();
                     if (user != null)
                     {
-                        UserImageProfile userImageProfile = (from userImage in db.UserImageProfile
-                                                             where userImage.IdUser == user.Id
-                                                             select userImage).FirstOrDefault();
-                        if (userImageProfile == null)
-                        {
-                            string[] paths = new string[2] { _createPath(formFile, "S"), _createPath(formFile, "M") };
-                            byte[] imageProfile = ConvertToByteArray(formFile);
-                            MagickImage[] images = ResizeImages(imageProfile);
-                            CopyImagesToPath(images, paths, user.NameUser);
-                        }
+                        //UserImageProfile userImageProfile = (from userImage in db.UserImageProfile
+                        //                                     where userImage.IdUser == user.Id
+                        //                                     select userImage).FirstOrDefault();
+
+                        string[] paths = new string[2] { _createPath(formFile, "S"), _createPath(formFile, "M") };
+                        byte[] imageProfile = ConvertToByteArray(formFile);
+                        MagickImage[] images = ResizeImages(imageProfile);
+                        CopyImagesToPath(images, paths, user.Id);
                     }
                 }
                 catch (Exception e)
@@ -125,7 +123,7 @@ namespace Parchegram.Service.ClassesSupport
         /// <param name="images">Imagenes a guardar</param>
         /// <param name="paths">Rutas donde se guardaran las imagenes</param>
         /// <param name="nameUser">Nombre de usuario para guardar las rutas en db con relación a ese usuario</param>
-        private void CopyImagesToPath(MagickImage[] images, string[] paths, string nameUser)
+        private void CopyImagesToPath(MagickImage[] images, string[] paths, int idUser)
         {
             if (images.Length > 0)
             {
@@ -133,8 +131,7 @@ namespace Parchegram.Service.ClassesSupport
                 {
                     try
                     {
-                        User user = db.User.Where(u => u.NameUser == nameUser).FirstOrDefault();
-                        UserImageProfile userImageProfile = db.UserImageProfile.Where(u => u.IdUser == user.Id).FirstOrDefault();
+                        UserImageProfile userImageProfile = db.UserImageProfile.Where(u => u.IdUser == idUser).FirstOrDefault();
                         for (int i = 0; i < images.Length; i++)
                         {
                             try
@@ -151,7 +148,7 @@ namespace Parchegram.Service.ClassesSupport
                                 _logger.LogInformation(e.Message);
                             }
                         }
-                        userImageProfile.IdUser = user.Id;
+                        userImageProfile.IdUser = idUser;
 
                         if (userImageProfile == null)
                             db.UserImageProfile.Add(userImageProfile);

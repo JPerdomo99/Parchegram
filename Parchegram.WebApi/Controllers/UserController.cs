@@ -133,11 +133,17 @@ namespace Parchegram.WebApi.Controllers
             Response response = await _userService.UserConfig(configUserRequest);
 
             if (response.Success == 0)
-                return Ok(response);
+                return BadRequest(response);
 
-            response = await _userService.GetUserConfigResponse(configUserRequest.NameUser);
+            response = await _userService.GetUserConfigResponse(configUserRequest);
 
             return Ok(response);
-        }   
+        }
+
+        [HttpPost("ActionUpload")]
+        public IActionResult ActionUpload()
+        {
+            return Ok(true);
+        }
     }
 }
