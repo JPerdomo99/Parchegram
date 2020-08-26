@@ -13,11 +13,11 @@ namespace Parchegram.Model.Post.Request
         {
         }
 
-        public CreatePostRequest(string description, IFormFile file, int idUser, int idTypePost)
+        public CreatePostRequest(string description, IFormFile file, string nameUser, int idTypePost)
         {
             Description = description;
             File = file;
-            IdUser = idUser;
+            NameUser = nameUser;
             IdTypePost = idTypePost;
         }
 
@@ -27,8 +27,7 @@ namespace Parchegram.Model.Post.Request
         [DataType(DataType.Upload)]
         public IFormFile File { get; set; }
 
-        [Required]
-        public int IdUser { get; set; }
+        public string NameUser { get; set; }
 
         [Required]
         public int IdTypePost { get; set; }

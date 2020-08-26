@@ -298,7 +298,7 @@ namespace Parchegram.Service.Services.Implementations
             // Validamos la imagen (extensión y tamaño)
             if (configUserRequest.ImageProfile != null)
             {
-                if (!validateExtensionImage(configUserRequest.ImageProfile.ContentType))
+                if (!ValidateFile.ValidateExtensionImage(configUserRequest.ImageProfile.ContentType))
                 {
                     response.Success = 0;
                     response.Data = false;
@@ -306,11 +306,11 @@ namespace Parchegram.Service.Services.Implementations
 
                     return response;
                 }
-                if (!validateSizeImage(configUserRequest.ImageProfile.Length))
+                if (!ValidateFile.ValidateSizeFile(configUserRequest.ImageProfile.Length, 5000000))
                 {
                     response.Success = 0;
                     response.Data = false;
-                    response.Message = $"Máximo 5MB para el archivo: {ConvertToMegabytes(configUserRequest.ImageProfile.Length)}";
+                    response.Message = $"Máximo 5MB para el archivo: {ValidateFile.ConvertToMegabytes(configUserRequest.ImageProfile.Length)}";
 
                     return response;
                 }
@@ -448,53 +448,6 @@ namespace Parchegram.Service.Services.Implementations
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
             return tokenHandler.WriteToken(token);
-        }
-
-        /// <summary>
-        /// Valida la extensión de la imagen
-        /// </summary>
-        /// <param name="extension">Extensión que se espera que este en el arreglo</param>
-        /// <returns>bool</returns>
-        private bool validateExtensionImage(string extension)
-        {
-            try
-            {
-                string[] Extensions = { "image/jpeg", "image/jpg", "image/png", "image/x-icon", "image/svg+xml", "image/gif" };
-                string result = Extensions.FirstOrDefault(e => e.Equals(extension));
-
-                return (result != null) ? true : false;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Valida que el archivo no pese mas de 5 megas
-        /// </summary>
-        /// <param name="size">Tamaño del archivo en bytes</param>
-        /// <returns>bool</returns>
-        private bool validateSizeImage(long size)
-        {
-            return (size <= 5000000) ? true : false;
-        }
-
-        /// <summary>
-        /// Convierte bytes en megabytes para mandar como mensaje de respuesta
-        /// </summary>
-        /// <param name="size">Tamaño del archivo en bytes</param>
-        /// <returns>Tamaño del archivo en megabytes con 2 decimales</returns>
-        private double ConvertToMegabytes(long size)
-        {
-            try
-            {
-                return Math.Round(Convert.ToDouble(size) / 1048576, 2);
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
         }
     }
 }

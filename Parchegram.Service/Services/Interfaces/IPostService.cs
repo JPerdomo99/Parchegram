@@ -1,19 +1,16 @@
-﻿using Parchegram.Model.Models;
-using Parchegram.Model.Post.Request;
-using Parchegram.Model.Request.Comment;
-using Parchegram.Model.Request.Like;
+﻿using Parchegram.Model.Post.Request;
 using Parchegram.Model.Request.Post;
 using Parchegram.Model.Response;
+using Parchegram.Model.Response.General;
 using Parchegram.Model.Response.Post;
-using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Parchegram.Service.Services.Interfaces
 {
     public interface IPostService
     {
-        public bool CreatePost(CreatePostRequest createPostRequest);
+        public Task<Response> CreatePost(CreatePostRequest createPostRequest);
 
         public bool EditPost(EditPostRequest editPostRequest);
 

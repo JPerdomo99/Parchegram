@@ -1,15 +1,21 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Parchegram.Model.Models;
 using Parchegram.Model.Post.Request;
 using Parchegram.Model.Request.Post;
 using Parchegram.Model.Response;
+using Parchegram.Model.Response.General;
 using Parchegram.Model.Response.Post;
 using Parchegram.Service.Services.Interfaces;
+using Parchegram.Service.Tools;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Parchegram.Service.Services.Implementations
 {
@@ -26,34 +32,59 @@ namespace Parchegram.Service.Services.Implementations
             _logger = logger;
         }
 
-        public bool CreatePost(CreatePostRequest createPostRequest)
+        public async Task<Response> CreatePost(CreatePostRequest createPostRequest)
         {
+            Response response = new Response();
+
+            // Validamos el archivo (extension y tamaño)
+            if (createPostRequest.File != null)
+            {
+                if (!ValidateFile.ValidateExtensionFile(createPostRequest.File.ContentType))
+                {
+                    return response.GetResponse($"Formato de archivo no valido {createPostRequest.File.ContentType}",
+                                                0, false);
+                }
+                if (!ValidateFile.ValidateSizeFile(createPostRequest.File.Length, 8000000))
+                {
+                    return response.GetResponse($"Máximo 8MB para el archivo: {ValidateFile.ConvertToMegabytes(createPostRequest.File.Length)}",
+                                                0, false);
+                }
+            }
+
             using (var db = new ParchegramDBContext())
             {
                 try
                 {
-                    Post oPost = new Post();
-                    oPost.Description = createPostRequest.Description;
-                    oPost.IdUser = createPostRequest.IdUser;
-                    oPost.IdTypePost = createPostRequest.IdTypePost;
-                    oPost.Date = DateTime.Now;
-                    if (createPostRequest.IdTypePost != 3)
+                    User user = db.User.Where(u => u.NameUser == createPostRequest.NameUser).FirstOrDefault();
+                    if (user != null)
                     {
-                        string pathFile = GetPathFile(createPostRequest.File);
-                        oPost.PathFile = pathFile;
-                        SaveFile(createPostRequest.File);
+                        int idUser = await db.User.Where(u => u.NameUser == createPostRequest.NameUser).Select(u => u.Id).FirstOrDefaultAsync();
+                        Post post = new Post();
+                        post.Description = createPostRequest.Description;
+                        post.IdUser = idUser;
+                        post.IdTypePost = DefineTypePost(createPostRequest.File);
+                        //post.IdTypePost = createPostRequest.IdTypePost;
+                        post.Date = DateTime.Now;
+                        if (createPostRequest.IdTypePost != 3)
+                        {
+                            string pathFile = GetPathFile(createPostRequest.File);
+                            post.PathFile = pathFile;
+                            SaveFile(createPostRequest.File);
+                        }
+
+                        db.Post.Add(post);
+                        db.SaveChanges();
+                    } else
+                    {
+                        return response.GetResponse("El usuario no existe", 0, false);
                     }
 
-                    db.Post.Add(oPost);
-                    if (db.SaveChanges() == 1)
-                        return true;
-
-                    return false;
+                    return response.GetResponse("Post creado correctamente", 1, true);
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    return false;
+                    return response.GetResponse($"Ha ocurrido un error {e.Message}", 0, false);
                 }
             }
         }
@@ -154,47 +185,73 @@ namespace Parchegram.Service.Services.Implementations
             {
                 try
                 {
-                    IQueryable<PostListResponse> queryPosts = from logPost in db.LogPost
-                                                                  //join userLogPost in db.User on nameUser equals nameUser
-                                                              join post in db.Post on logPost.IdPost equals post.Id into leftPost // Sacamos los post que coinciden con los registros de logPost
-                                                              from subPost in leftPost.DefaultIfEmpty()
-                                                              join userOwnerPost in db.User on subPost.IdUser equals userOwnerPost.Id into leftUserOwnerPost // Sacamos los dueños de los post
-                                                              from subUserOwnerPost in leftUserOwnerPost.DefaultIfEmpty()
-                                                              join share in db.Share on logPost.IdPost equals share.IdPost into leftShare // Sacamos los share que significa que usuarios que sigo han compartido post de otros
-                                                              from subShare in leftShare.DefaultIfEmpty()
-                                                              join userSharePost in db.User on subShare.IdUser equals userSharePost.Id into leftUserSharePost // Sacamos los usuarios que compartieron el post
-                                                              from subUserSharePost in leftUserSharePost.DefaultIfEmpty()
-                                                              where logPost.IdUserNavigation.NameUser == nameUser
-                                                              orderby logPost.Date descending
-                                                              select new PostListResponse
-                                                              {
-                                                                  // Post
-                                                                  IdPost = subPost.Id,
-                                                                  IdTypePost = subPost.IdTypePost,
-                                                                  Description = subPost.Description,
-                                                                  PathFile = subPost.PathFile,
-                                                                  Date = subPost.Date,
+                    //IQueryable<PostListResponse> queryPosts = from logPost in db.LogPost
+                    //                                          //join userLogPost in db.User on nameUser equals nameUser
+                    //                                          join post in db.Post on logPost.IdPost equals post.Id into leftPost // Sacamos los post que coinciden con los registros de logPost
+                    //                                          from subPost in leftPost.DefaultIfEmpty()
+                    //                                          join userOwnerPost in db.User on subPost.IdUser equals userOwnerPost.Id into leftUserOwnerPost // Sacamos los dueños de los post
+                    //                                          from subUserOwnerPost in leftUserOwnerPost.DefaultIfEmpty()
+                    //                                          join share in db.Share on logPost.IdPost equals share.IdPost into leftShare // Sacamos los share que significa que usuarios que sigo han compartido post de otros
+                    //                                          from subShare in leftShare.DefaultIfEmpty()
+                    //                                          join userSharePost in db.User on subShare.IdUser equals userSharePost.Id into leftUserSharePost // Sacamos los usuarios que compartieron el post
+                    //                                          from subUserSharePost in leftUserSharePost.DefaultIfEmpty()
+                    //                                          where logPost.IdUserNavigation.NameUser == nameUser
+                    //                                          orderby logPost.Date descending
+                    //                                          select new PostListResponse
+                    //                                          {
+                    //                                              // Post
+                    //                                              IdPost = subPost.Id,
+                    //                                              IdTypePost = subPost.IdTypePost,
+                    //                                              Description = subPost.Description,
+                    //                                              PathFile = subPost.PathFile,
+                    //                                              Date = subPost.Date,
 
-                                                                  // UserOwnerPost
-                                                                  IdUserOwnerPost = subUserOwnerPost.Id,
-                                                                  NameUserOwnerPost = subUserOwnerPost.NameUser,
+                    //                                              // UserOwnerPost
+                    //                                              IdUserOwnerPost = subUserOwnerPost.Id,
+                    //                                              NameUserOwnerPost = subUserOwnerPost.NameUser,
 
-                                                                  // UserSharePost
-                                                                  IdUserSharePost = subUserSharePost.Id,
-                                                                  NameUserUserSharePost = subUserSharePost.NameUser
-                                                              };
+                    //                                              // UserSharePost
+                    //                                              IdUserSharePost = subUserSharePost.Id,
+                    //                                              NameUserUserSharePost = subUserSharePost.NameUser
+                    //                                          };
 
-                    ICollection<PostListResponse> listPosts = new List<PostListResponse>();
+                    #region
+                    var followTest = db.Follow.Where(f => f.IdUserFollower.Equals(1)).Select(f => f.IdUserFollowing);
+                    var test = from tempPost in db.Post
+
+                               join tempUserOwner in db.User on tempPost.IdUser equals tempUserOwner.Id
+
+                               join tempShare in db.Share on tempPost.Id equals tempShare.IdPost into leftTempShare
+                               from subTempShare in leftTempShare.DefaultIfEmpty()
+
+                               join tempFollow in db.Follow on tempPost.IdUser equals tempFollow.IdUserFollowing into leftTempFollow
+                               from subTempFollow in leftTempFollow.DefaultIfEmpty()
+
+                               join TempUserShare in db.User on subTempShare.IdUser equals TempUserShare.Id into leftTempUserShare
+                               from subTempUserShare in leftTempUserShare.DefaultIfEmpty()
+
+                               where subTempFollow.IdUserFollower.Equals(1) || followTest.Contains(subTempShare.IdUser)
+                               //subTempShare.IdUser.Equals(db.Follow.Where(f => f.IdUserFollower.Equals(1)).Select(f => f.IdUserFollowing))
+
+                               select new { tempPost, tempUserOwner, subTempShare, subTempFollow, subTempUserShare };
+                    #endregion
+
+                    foreach (var item in test)
+                    {
+                        _logger.LogInformation(item.ToString());
+                    }
+                    
+                    ICollection < PostListResponse > listPosts = new List<PostListResponse>();
                     ILikeService likeService = new LikeService();
                     ICommentService commentService = new CommentService();
-                    foreach (var post in queryPosts)
-                    {
-                        post.NumLikes = likeService.GetNumLikes(post.IdPost);
-                        post.CommentsByPost = commentService.GetCommentsByPost(post.IdPost, false);
-                        if (post.PathFile != null)
-                            post.File = GetFile(post.PathFile);
-                        listPosts.Add(post);
-                    }
+                    //foreach (var post in queryPosts)
+                    //{
+                    //    post.NumLikes = likeService.GetNumLikes(post.IdPost);
+                    //    post.CommentsByPost = commentService.GetCommentsByPost(post.IdPost, false);
+                    //    if (post.PathFile != null)
+                    //        post.File = GetFile(post.PathFile);
+                    //    listPosts.Add(post);
+                    //}
 
                     return listPosts;
                 }
@@ -247,6 +304,31 @@ namespace Parchegram.Service.Services.Implementations
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Metodo que define el tipo tipo de post dependiendo si hay o no archivo
+        /// </summary>
+        /// <param name="formFile">Archivo que llegas desde un form imagen o video</param>
+        /// <returns>Id del tipo de archivo del 1 al 3</returns>
+        private int DefineTypePost(IFormFile formFile)
+        {
+            return (formFile != null) ? DefineTypePostFile(formFile.ContentType) : 3;
+        }
+
+        /// <summary>
+        /// Define el tipo de archivo si es imagen o video
+        /// </summary>
+        /// <param name="extension">Extension del archivo</param>
+        /// <returns>Tipo del archivo 1 si es imagen 2 si es video</returns>
+        private int DefineTypePostFile(string extension)
+        {
+            if (extension.Contains("image"))
+                return 1;
+            else if (extension.Contains("video"))
+                return 2;
+            else
+                return 0;
         }
     }
 }
