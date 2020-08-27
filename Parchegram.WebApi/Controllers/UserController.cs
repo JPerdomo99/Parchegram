@@ -65,7 +65,7 @@ namespace Parchegram.WebApi.Controllers
             Response response = new Response();
             if (ModelState.IsValid)
             {
-                var userResponse = _userService.Register(model, _appSettings);
+                var userResponse = _userService.Register(model);
                 if (userResponse == null)
                 {
                     response.Message = "User already exists";

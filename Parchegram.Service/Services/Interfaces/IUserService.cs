@@ -14,7 +14,7 @@ namespace Parchegram.Service.Services.Interfaces
     {
         public Task<UserResponse> Login(LoginRequest model, AppSettings appSettings);
 
-        public UserResponse Register(RegisterRequest model, AppSettings appSettings);
+        public UserResponse Register(RegisterRequest model);
 
         public Response NameUserUnique(string nameUser);
 

@@ -37,12 +37,9 @@ namespace Parchegram.Service.ClassesSupport
                     User user = db.User.Where(u => u.NameUser == nameUser).FirstOrDefault();
                     if (user != null)
                     {
-                        //UserImageProfile userImageProfile = (from userImage in db.UserImageProfile
-                        //                                     where userImage.IdUser == user.Id
-                        //                                     select userImage).FirstOrDefault();
-
                         string[] paths = new string[2] { _createPath(formFile, "S"), _createPath(formFile, "M") };
-                        byte[] imageProfile = ConvertToByteArray(formFile);
+                        Image image = new Image();
+                        byte[] imageProfile = image.GetFile(formFile);
                         MagickImage[] images = ResizeImages(imageProfile);
                         CopyImagesToPath(images, paths, user.Id);
                     }
@@ -52,45 +49,6 @@ namespace Parchegram.Service.ClassesSupport
                     _logger.LogInformation(e.Message);
                 }
             }
-        }
-
-        /// <summary>
-        /// Sobrecarga privada para obtener un archivo en byte[] directamente de un IFormFile
-        /// </summary>
-        /// <param name="formFile">Archivo que se llego a un controlador</param>
-        /// <returns>Array de bytes que conforman el archivo</returns>
-        private byte[] ConvertToByteArray(IFormFile formFile)
-        {
-            byte[] fileBytes = null;
-            if (formFile.Length > 0)
-            {
-                using (var ms = new MemoryStream())
-                {
-                    formFile.CopyTo(ms);
-                    fileBytes = ms.ToArray();
-                    string s = Convert.ToBase64String(fileBytes);
-                    // act on the Base64 data
-                }
-            }
-
-            return fileBytes;
-        }
-
-        /// <summary>
-        /// Sobrecarga pulica para obtener un archivo en byte[] con ayuda de una ruta
-        /// </summary>
-        /// <param name="pathFile">Ruta del archivo</param>
-        /// <returns>Array de bytes que conforman el archivo</returns>
-        public async Task<byte[]> ConvertToByteArray(string pathFile)
-        {
-            byte[] result;
-            using (FileStream file = File.Open(pathFile, FileMode.Open))
-            {
-                result = new byte[file.Length];
-                await file.ReadAsync(result, 0, (int)file.Length);
-            }
-
-            return result;
         }
 
         /// <summary>

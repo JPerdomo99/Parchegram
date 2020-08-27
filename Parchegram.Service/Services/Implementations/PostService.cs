@@ -185,43 +185,95 @@ namespace Parchegram.Service.Services.Implementations
             {
                 try
                 {
-                    #region
-                    var test = from tempPost in db.Post
-
-                               join tempUserOwner in db.User on tempPost.IdUser equals tempUserOwner.Id
-
-                               join tempShare in db.Share on tempPost.Id equals tempShare.IdPost into leftTempShare
-                               from subTempShare in leftTempShare.DefaultIfEmpty()
-
-                               join tempFollow in db.Follow on tempPost.IdUser equals tempFollow.IdUserFollowing into leftTempFollow
-                               from subTempFollow in leftTempFollow.DefaultIfEmpty()
-
-                               join TempUserShare in db.User on subTempShare.IdUser equals TempUserShare.Id into leftTempUserShare
-                               from subTempUserShare in leftTempUserShare.DefaultIfEmpty()
-                                                                               // Si el que compartio el post es seguido por el usuario 1
-                               where subTempFollow.IdUserFollower.Equals(1) || db.Follow.Any(f => f.IdUserFollower.Equals(1) && f.IdUserFollowing.Equals(subTempShare.IdUser))
-
-                               select new { tempPost, tempUserOwner, subTempShare, subTempFollow, subTempUserShare };
-                    #endregion
-
-                    foreach (var item in test)
-                    {
-                        _logger.LogInformation(item.ToString());
-                    }
-                    
-                    ICollection < PostListResponse > listPosts = new List<PostListResponse>();
+                    IQueryable<PostListQueryResponse> queryResult = GetPostListQueryResponses(1);
+                    ICollection<PostResponse> listPosts = new List<PostResponse>();
                     ILikeService likeService = new LikeService();
                     ICommentService commentService = new CommentService();
-                    //foreach (var post in queryPosts)
-                    //{
-                    //    post.NumLikes = likeService.GetNumLikes(post.IdPost);
-                    //    post.CommentsByPost = commentService.GetCommentsByPost(post.IdPost, false);
-                    //    if (post.PathFile != null)
-                    //        post.File = GetFile(post.PathFile);
-                    //    listPosts.Add(post);
-                    //}
+                    foreach (var post in queryResult)
+                    {
+                        PostResponse postResponse = new PostResponse();
+
+                        // Post
+                        postResponse.IdPost = post.QueryPost.Id;
+                        postResponse.IdTypePost = post.QueryPost.IdTypePost;
+                        postResponse.Description = post.QueryPost.Description;
+                        // El post fue compartido entonces asignamos la fecha del share
+                        if (post.QueryFollow.Equals(null))
+                            postResponse.Date = post.QueryShare.Date;
+                        else
+                            postResponse.Date = post.QueryPost.Date;
+
+                        if (post.QueryPost.PathFile != null)
+                            postResponse.File = GetFile(post.QueryPost.PathFile);
+
+
+                        if (item.subTempFollow.Equals(null))
+                            postResponseTest.Date = item.subTempShare.Date;
+                        else
+                            postResponseTest.Date = item.tempPost.Date;
+
+                        postResponseTest.IdUserFollowing = item.subTempFollow.IdUserFollowing;
+                        // Imagen del usuario que subio el post en bytes
+
+                        if (item.subTempShare != null)
+                        {
+                            postResponseTest.IdUserShare = item.subTempShare.IdUser;
+                            // Nombre del usuario
+                            // Imagen del usuario que compartio el post en bytes
+                        }
+
+                        post.NumLikes = likeService.GetNumLikes(post.IdPost);
+                        post.CommentsByPost = commentService.GetCommentsByPost(post.IdPost, false);
+                        if (post.PathFile != null)
+                            post.File = GetFile(post.PathFile);
+                        listPosts.Add(post);
+                    }
 
                     return listPosts;
+                }
+                catch (Exception e)
+                {
+                    _logger.LogInformation(e.Message);
+                    return null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Ejecuta consulta de posts con uniones y devuelve el resultado
+        /// </summary>
+        /// <param name="idUser">Id del usuario al cual le vamos a mostrar los posts</param>
+        /// <returns>Devuelve la consulta que contiene los post que se devolveran al cliente correspondiente</returns>
+        private IQueryable<PostListQueryResponse> GetPostListQueryResponses(int idUser)
+        {
+            using (var db = new ParchegramDBContext())
+            {
+                try
+                {
+                    IQueryable<PostListQueryResponse> query = from tempPost in db.Post
+
+                                                             join tempUserOwner in db.User on tempPost.IdUser equals tempUserOwner.Id
+
+                                                             join tempShare in db.Share on tempPost.Id equals tempShare.IdPost into leftTempShare
+                                                             from subTempShare in leftTempShare.DefaultIfEmpty()
+
+                                                             join tempFollow in db.Follow on tempPost.IdUser equals tempFollow.IdUserFollowing into leftTempFollow
+                                                             from subTempFollow in leftTempFollow.DefaultIfEmpty()
+
+                                                             join TempUserShare in db.User on subTempShare.IdUser equals TempUserShare.Id into leftTempUserShare
+                                                             from subTempUserShare in leftTempUserShare.DefaultIfEmpty()
+                                                                                                             // Si el que compartio el post es seguido por el usuario 1
+                                                             where subTempFollow.IdUserFollower.Equals(1) || db.Follow.Any(f => f.IdUserFollower.Equals(1) && f.IdUserFollowing.Equals(subTempShare.IdUser))
+
+                                                             select new PostListQueryResponse
+                                                             {
+                                                                 QueryPost = tempPost,
+                                                                 QueryUserOwner = tempUserOwner,
+                                                                 QueryShare = subTempShare,
+                                                                 QueryFollow = subTempFollow,
+                                                                 QueryUserShare = subTempUserShare
+                                                             };
+                    return query;
                 }
                 catch (Exception e)
                 {

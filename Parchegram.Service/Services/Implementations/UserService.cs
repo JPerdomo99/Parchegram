@@ -54,8 +54,8 @@ namespace Parchegram.Service.Services.Implementations
                     userResponse.Email = user.UserLoginResult.Email;
                     if (user.UserImageProfileResult != null)
                     {
-                        ImageUserProfile imageUserProfile = new ImageUserProfile(false);
-                        userResponse.ImageProfile = await imageUserProfile.ConvertToByteArray(user.UserImageProfileResult.PathImageS);
+                        Image image = new Image();
+                        userResponse.ImageProfile = await image.GetFile(user.UserImageProfileResult.PathImageS);
                     }
                     userResponse.Token = GetToken(userResponse, appSettings);
 
@@ -69,49 +69,47 @@ namespace Parchegram.Service.Services.Implementations
             }
         }
 
-        public UserResponse Register(RegisterRequest registerRequest, AppSettings appSettings)
+        /// <summary>
+        /// Metodo que es llamado para guardar un registro de una nuevo usuario
+        /// </summary>
+        /// <param name="registerRequest">Modelo que contiene los datos para registrar el nuevo usuario</param>
+        /// <returns>Un objeto Response que define el exito de la operación</returns>
+        public async Task<Response> Register(RegisterRequest registerRequest)
         {
             UserResponse userResponse = new UserResponse();
             using (var db = new ParchegramDBContext())
             {
+                Response response = new Response();
                 try
                 {
-                    User user = db.User.Where(u => u.Email == registerRequest.Email || u.NameUser == registerRequest.NameUser).FirstOrDefault();
-                    if (user == null)
+                    User userEmail = await db.User.Where(u => u.Email.Equals(registerRequest.Email)).FirstOrDefaultAsync();
+                    User userNameUser = await db.User.Where(u => u.NameUser.Equals(registerRequest.NameUser)).FirstOrDefaultAsync();
+                    // Los dos son datos unicos, no puede haber otro con el mismo Email y no puede haber otro con el mismo Nombre
+                    if (userEmail != null && userNameUser != null)
                     {
-                        User oUser = new User();
-                        oUser.NameUser = registerRequest.NameUser;
-                        oUser.Email = registerRequest.Email;
-                        oUser.Password = Encrypt.GetSHA256(registerRequest.Password);
-                        oUser.DateBirth = registerRequest.DateBirth;
-                        oUser.CodeConfirmEmail = Guid.NewGuid().ToString();
-                        db.User.Add(oUser);
-                        if (db.SaveChanges() == 1)
-                        {
-                            user = db.User.Where(u => u.Email == registerRequest.Email).FirstOrDefault();
+                        User user = new User();
+                        user.NameUser = registerRequest.NameUser;
+                        user.Email = registerRequest.Email;
+                        user.Password = Encrypt.GetSHA256(registerRequest.Password);
+                        user.DateBirth = registerRequest.DateBirth;
+                        user.CodeConfirmEmail = Guid.NewGuid().ToString();
+                        db.User.Add(user);
+                        if (await db.SaveChangesAsync() == 1)
+                            return response.GetResponse("Se ha guardado el usuario correctamente", 1, true);
 
-                            userResponse.Email = registerRequest.Email;
-                            userResponse.NameUser = registerRequest.NameUser;
-                            userResponse.Token = GetToken(userResponse, appSettings);
-
-                            EmailRequest emailRequest = new EmailRequest(user.Email, user.CodeConfirmEmail);
-                            IEmailService emailService = new EmailService();
-                            emailService.SendEmail(emailRequest);
-                        }
-                    }
-                    else
+                        return response.GetResponse("No se pudo guardar el usuario", 0, false);
+                    } else
                     {
-                        return null;
+                        string datoUsuario = userEmail != null ? datoUsuario = "Email" : (userNameUser != null ? datoUsuario = "Name User" : "");
+                        return response.GetResponse($"Ya hay un usuario registrado con ese dato: {datoUsuario}", 0, false);
                     }
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    return null;
+                    return response.GetResponse($"Ha ocurrido un error al intentar guardar el usuario: {e.Message}", 0, false);
                 }
             }
-
-            return userResponse;
         }
 
         /// <summary>
@@ -390,12 +388,12 @@ namespace Parchegram.Service.Services.Implementations
                         return response;
                     }
 
-                    ImageUserProfile imageUserProfile = new ImageUserProfile(false);
                     UserConfigResponse userConfigResponse = new UserConfigResponse();
                     userConfigResponse.NameUser = userConfig.NameUser;
                     try
                     {
-                        userConfigResponse.ImageProfile = await imageUserProfile.ConvertToByteArray(userConfig.PathImageS);
+                        Image image = new Image();
+                        userConfigResponse.ImageProfile = await image.GetFile(userConfig.PathImageS);
                     }
                     catch (Exception e)
                     {
