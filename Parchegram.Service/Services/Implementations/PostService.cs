@@ -185,38 +185,7 @@ namespace Parchegram.Service.Services.Implementations
             {
                 try
                 {
-                    //IQueryable<PostListResponse> queryPosts = from logPost in db.LogPost
-                    //                                          //join userLogPost in db.User on nameUser equals nameUser
-                    //                                          join post in db.Post on logPost.IdPost equals post.Id into leftPost // Sacamos los post que coinciden con los registros de logPost
-                    //                                          from subPost in leftPost.DefaultIfEmpty()
-                    //                                          join userOwnerPost in db.User on subPost.IdUser equals userOwnerPost.Id into leftUserOwnerPost // Sacamos los dueños de los post
-                    //                                          from subUserOwnerPost in leftUserOwnerPost.DefaultIfEmpty()
-                    //                                          join share in db.Share on logPost.IdPost equals share.IdPost into leftShare // Sacamos los share que significa que usuarios que sigo han compartido post de otros
-                    //                                          from subShare in leftShare.DefaultIfEmpty()
-                    //                                          join userSharePost in db.User on subShare.IdUser equals userSharePost.Id into leftUserSharePost // Sacamos los usuarios que compartieron el post
-                    //                                          from subUserSharePost in leftUserSharePost.DefaultIfEmpty()
-                    //                                          where logPost.IdUserNavigation.NameUser == nameUser
-                    //                                          orderby logPost.Date descending
-                    //                                          select new PostListResponse
-                    //                                          {
-                    //                                              // Post
-                    //                                              IdPost = subPost.Id,
-                    //                                              IdTypePost = subPost.IdTypePost,
-                    //                                              Description = subPost.Description,
-                    //                                              PathFile = subPost.PathFile,
-                    //                                              Date = subPost.Date,
-
-                    //                                              // UserOwnerPost
-                    //                                              IdUserOwnerPost = subUserOwnerPost.Id,
-                    //                                              NameUserOwnerPost = subUserOwnerPost.NameUser,
-
-                    //                                              // UserSharePost
-                    //                                              IdUserSharePost = subUserSharePost.Id,
-                    //                                              NameUserUserSharePost = subUserSharePost.NameUser
-                    //                                          };
-
                     #region
-                    var followTest = db.Follow.Where(f => f.IdUserFollower.Equals(1)).Select(f => f.IdUserFollowing);
                     var test = from tempPost in db.Post
 
                                join tempUserOwner in db.User on tempPost.IdUser equals tempUserOwner.Id
@@ -229,9 +198,8 @@ namespace Parchegram.Service.Services.Implementations
 
                                join TempUserShare in db.User on subTempShare.IdUser equals TempUserShare.Id into leftTempUserShare
                                from subTempUserShare in leftTempUserShare.DefaultIfEmpty()
-
-                               where subTempFollow.IdUserFollower.Equals(1) || followTest.Contains(subTempShare.IdUser)
-                               //subTempShare.IdUser.Equals(db.Follow.Where(f => f.IdUserFollower.Equals(1)).Select(f => f.IdUserFollowing))
+                                                                               // Si el que compartio el post es seguido por el usuario 1
+                               where subTempFollow.IdUserFollower.Equals(1) || db.Follow.Any(f => f.IdUserFollower.Equals(1) && f.IdUserFollowing.Equals(subTempShare.IdUser))
 
                                select new { tempPost, tempUserOwner, subTempShare, subTempFollow, subTempUserShare };
                     #endregion
