@@ -32,6 +32,6 @@ namespace Parchegram.Model.Response.Post
         public byte[] ImageProfileUserShare { get; set; }
 
         // NumLikes
-        public int NumLikes { get; set; }
+        public int NumberLikes { get; set; }
     }
 }

@@ -30,22 +30,21 @@ namespace Parchegram.Service.Services.Implementations
             {
                 try
                 {
-                    IQueryable<PostCommentResponse> commentsByPost = null;
-
+                    ICollection<PostCommentResponse> commentsByPost = null;
                     if (byId)
                     {
                         commentsByPost =
-                                            from comment in db.Comment
-                                            join user in db.User on comment.IdUser equals user.Id
-                                            where comment.IdPost == idPost
-                                            orderby comment.Date
-                                            select new PostCommentResponse
-                                            {
-                                                NameUser = user.NameUser,
-                                                IdUser = comment.IdUser,
-                                                CommentText = comment.CommentText,
-                                                Date = comment.Date
-                                            };
+                                            (from comment in db.Comment
+                                             join user in db.User on comment.IdUser equals user.Id
+                                             where comment.IdPost == idPost
+                                             orderby comment.Date
+                                             select new PostCommentResponse
+                                             {
+                                                 NameUser = user.NameUser,
+                                                 IdUser = comment.IdUser,
+                                                 CommentText = comment.CommentText,
+                                                 Date = comment.Date
+                                             }).ToList(); ;
                     }
                     else
                     {
@@ -60,17 +59,10 @@ namespace Parchegram.Service.Services.Implementations
                                                  IdUser = comment.IdUser,
                                                  CommentText = comment.CommentText,
                                                  Date = comment.Date
-                                             }).Take(2);
+                                             }).Take(2).ToList();
                     }
 
-                    ICollection<PostCommentResponse> lstCommentsByPost = null;
-                    foreach (PostCommentResponse comment in commentsByPost)
-                        lstCommentsByPost.Add(comment);
-
-                    if (lstCommentsByPost == null)
-                        return null;
-
-                    return lstCommentsByPost;
+                    return commentsByPost;
                 }
                 catch (Exception e)
                 {

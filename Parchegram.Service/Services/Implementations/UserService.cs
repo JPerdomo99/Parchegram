@@ -34,6 +34,12 @@ namespace Parchegram.Service.Services.Implementations
             _logger = logger;
         }
 
+        /// <summary>
+        /// Valida le existencia del usuario segun el modelo
+        /// </summary>
+        /// <param name="loginRequest">Modelo que contiene credenciales del login</param>
+        /// <param name="appSettings">Llave para generar el token</param>
+        /// <returns>UserResponse con datos del usuario para el cliente</returns>
         public async Task<UserResponse> Login(LoginRequest loginRequest, AppSettings appSettings)
         {
             using (var db = new ParchegramDBContext())
@@ -54,8 +60,7 @@ namespace Parchegram.Service.Services.Implementations
                     userResponse.Email = user.UserLoginResult.Email;
                     if (user.UserImageProfileResult != null)
                     {
-                        Image image = new Image();
-                        userResponse.ImageProfile = await image.GetFile(user.UserImageProfileResult.PathImageS);
+                        userResponse.ImageProfile = await Image.GetFile(user.UserImageProfileResult.PathImageS);
                     }
                     userResponse.Token = GetToken(userResponse, appSettings);
 
@@ -207,28 +212,14 @@ namespace Parchegram.Service.Services.Implementations
                     User user = await db.User.Where(u => u.NameUser == loginRequest.NameUser && u.Password ==
                                 Encrypt.GetSHA256(loginRequest.Password)).FirstOrDefaultAsync();
                     if (user == null)
-                    {
-                        response.Success = 0;
-                        response.Data = false;
-                        response.Message = "El usuario no existe";
+                        return response.GetResponse("El usuario no existe", 0, false);
 
-                        return response;
-                    }
-
-                    response.Success = 1;
-                    response.Data = true;
-                    response.Message = "El usuario existe";
-
-                    return response;
+                    return response.GetResponse("El usuario existe", 1, true);
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    response.Success = 0;
-                    response.Data = false;
-                    response.Message = $"Error inespareado {e.Message}";
-
-                    return response;
+                    return response.GetResponse($"Error inesperado {e.Message}", 0, false);
                 }
             }
         }
@@ -250,35 +241,17 @@ namespace Parchegram.Service.Services.Implementations
                     if (user != null)
                     {
                         if (user.ConfirmEmail == true)
-                        {
-                            response.Success = 1;
-                            response.Data = true;
-                            response.Message = "Email confirmado";
+                            return response.GetResponse("Email confirmado", 1, true);
 
-                            return response;
-                        }
-
-                        response.Success = 0;
-                        response.Data = false;
-                        response.Message = "Email no confirmado";
-
-                        return response;
+                        return response.GetResponse("Email no confirmado", 0, false);
                     }
 
-                    response.Success = 0;
-                    response.Data = false;
-                    response.Message = "Usuario no existe";
-
-                    return response;
+                    return response.GetResponse("El usuario no existe", 0, false);
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    response.Success = 0;
-                    response.Data = false;
-                    response.Message = $"Error inespareado {e.Message}";
-
-                    return response;
+                    return response.GetResponse($"Error inesperado {e.Message}", 0, false);
                 }
             }
         }
@@ -298,19 +271,13 @@ namespace Parchegram.Service.Services.Implementations
             {
                 if (!ValidateFile.ValidateExtensionImage(configUserRequest.ImageProfile.ContentType))
                 {
-                    response.Success = 0;
-                    response.Data = false;
-                    response.Message = $"Formato de imagen no valido {configUserRequest.ImageProfile.ContentType}";
-
-                    return response;
+                    string message = $"Formato de imagen no valido {configUserRequest.ImageProfile.ContentType}";
+                    return response.GetResponse(message, 0, false);
                 }
                 if (!ValidateFile.ValidateSizeFile(configUserRequest.ImageProfile.Length, 5000000))
                 {
-                    response.Success = 0;
-                    response.Data = false;
-                    response.Message = $"Máximo 5MB para el archivo: {ValidateFile.ConvertToMegabytes(configUserRequest.ImageProfile.Length)}";
-
-                    return response;
+                    string message = $"Máximo 5MB para el archivo: {ValidateFile.ConvertToMegabytes(configUserRequest.ImageProfile.Length)}";
+                    return response.GetResponse(message, 0, false);
                 }
             }
 
@@ -334,27 +301,15 @@ namespace Parchegram.Service.Services.Implementations
                     }
                     else
                     {
-                        response.Success = 0;
-                        response.Data = false;
-                        response.Message = "El usuario no existe";
-
-                        return response;
+                        return response.GetResponse("El usuario no existe", 0, false);
                     }
 
-                    response.Success = 1;
-                    response.Data = true;
-                    response.Message = "Usuario actualizado correctamente";
-
-                    return response;
+                    return response.GetResponse("Usuario actulizado correctamente", 1, false);
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    response.Success = 0;
-                    response.Data = false;
-                    response.Message = $"Ha ocurrido un error {e.Message}";
-
-                    return response;
+                    return response.GetResponse($"Error inesperado {e.Message}", 0, false);
                 }
             }
         }
@@ -380,20 +335,14 @@ namespace Parchegram.Service.Services.Implementations
                                       select new { user.NameUser, subUserImageProfile.PathImageS }).FirstOrDefault();
 
                     if (userConfig == null)
-                    {
-                        response.Success = 0;
-                        response.Data = null;
-                        response.Message = "El usuario no existe";
-
-                        return response;
-                    }
+                        return response.GetResponse("El usuario no existe", 0, null);
 
                     UserConfigResponse userConfigResponse = new UserConfigResponse();
                     userConfigResponse.NameUser = userConfig.NameUser;
                     try
                     {
                         Image image = new Image();
-                        userConfigResponse.ImageProfile = await image.GetFile(userConfig.PathImageS);
+                        userConfigResponse.ImageProfile = await Image.GetFile(userConfig.PathImageS);
                     }
                     catch (Exception e)
                     {
@@ -401,21 +350,14 @@ namespace Parchegram.Service.Services.Implementations
                         userConfigResponse.ImageProfile = null;
                     }
 
-                    response.Success = 1;
-                    response.Data = userConfigResponse;
-                    response.Message = "Datos obtenidos correctamente";
+                    return response.GetResponse("Datos obtenidos correctamente", 0, null);
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    response.Success = 0;
-                    response.Data = null;
-                    response.Message = $"Error al obtener los datos {e.Message}";
-                    throw;
+                    return response.GetResponse($"Error al obtener los datos {e.Message}", 0, null);
                 }
             }
-
-            return response;
         }
 
         /// <summary>

@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Parchegram.Model.Post.Request;
-using Parchegram.Model.Response;
 using Parchegram.Model.Response.General;
+using Parchegram.Model.Response.Post;
 using Parchegram.Service.Services.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -32,15 +32,20 @@ namespace Parchegram.WebApi.Controllers
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromForm] CreatePostRequest createPostRequest)
         {
-            Response result = await _postService.CreatePost(createPostRequest);
+            if (ModelState.IsValid)
+            {
+                Response result = await _postService.CreatePost(createPostRequest);
 
-            return Ok(result);
+                return Ok(result);
+            }
+
+            return BadRequest();    
         }
 
         [HttpGet("GetPosts/{nameUser}")]
-        public IActionResult GetPostList([FromRoute] string nameUser)
+        public async Task<IActionResult> GetPostList([FromRoute] string nameUser)
         {
-            ICollection<PostListResponse> result = _postService.GetPostList(nameUser);
+            ICollection<PostResponse> result = await _postService.GetPostList(nameUser);
 
             return Ok(result);
         }

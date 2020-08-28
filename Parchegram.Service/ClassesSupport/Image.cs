@@ -14,7 +14,7 @@ namespace Parchegram.Service.ClassesSupport
         /// </summary>
         /// <param name="formFile">Archivo que se llego a un controlador</param>
         /// <returns>Archivo en byte[]/returns>
-        public byte[] GetFile(IFormFile formFile)
+        public static byte[] GetFile(IFormFile formFile)
         {
             byte[] fileBytes = null;
             if (formFile.Length > 0)
@@ -36,7 +36,7 @@ namespace Parchegram.Service.ClassesSupport
         /// </summary>
         /// <param name="fullPath">Path que contiene la ubicación del archivo</param>
         /// <returns>Archivo en byte[]</returns>
-        public async Task<byte[]> GetFile(string fullPath)
+        public static async Task<byte[]> GetFile(string fullPath)
         {
             byte[] result;
             using (FileStream file = File.Open(fullPath, FileMode.Open))

@@ -1,5 +1,6 @@
 ﻿using ImageMagick;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Parchegram.Model.Models;
 using System;
@@ -39,7 +40,7 @@ namespace Parchegram.Service.ClassesSupport
                     {
                         string[] paths = new string[2] { _createPath(formFile, "S"), _createPath(formFile, "M") };
                         Image image = new Image();
-                        byte[] imageProfile = image.GetFile(formFile);
+                        byte[] imageProfile = Image.GetFile(formFile);
                         MagickImage[] images = ResizeImages(imageProfile);
                         CopyImagesToPath(images, paths, user.Id);
                     }
@@ -119,6 +120,32 @@ namespace Parchegram.Service.ClassesSupport
                     {
                         _logger.LogInformation(e.Message);
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Consulta la imagen de perfil de un usuario segun su Id
+        /// </summary>
+        /// <param name="idUser">Id del usuario dueño de la imagen</param>
+        /// <param name="size">Tamaño de la image S ó M</param>
+        /// <returns>Imagen de perfil de usuario en byte[]</returns>
+        public async Task<byte[]> GetImageUser(int idUser, char size)
+        {
+            using (var db = new ParchegramDBContext())
+            {
+                try
+                {
+                    UserImageProfile userImageProfile = await db.UserImageProfile.Where(u => u.IdUser.Equals(idUser)).FirstOrDefaultAsync();
+                    if (size.Equals('M'))
+                        return await Image.GetFile(userImageProfile.PathImageS);
+                    else
+                        return await Image.GetFile(userImageProfile.PathImageM);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogInformation(e.Message);
+                    return null;
                 }
             }
         }

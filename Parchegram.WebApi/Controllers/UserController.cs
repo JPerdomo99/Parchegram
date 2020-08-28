@@ -60,30 +60,17 @@ namespace Parchegram.WebApi.Controllers
         }
 
         [HttpPost("Register")]
-        public IActionResult Register([FromBody] RegisterRequest model)
+        public async  Task<IActionResult> Register([FromBody] RegisterRequest model)
         {
-            Response response = new Response();
             if (ModelState.IsValid)
             {
-                var userResponse = _userService.Register(model);
-                if (userResponse == null)
-                {
-                    response.Message = "User already exists";
-                    response.Success = 0;
-                    response.Data = userResponse;
-                    return BadRequest(response);
-                }
-
-                response.Message = "Register succcess!";
-                response.Success = 1;
-                response.Data = userResponse;
+                Response response = await _userService.Register(model);
+                return Ok(response);
             }
             else
             {
                 return BadRequest(ModelState);
             }
-
-            return Ok(response);
         }
 
         [HttpPost("ConfirmEmail")]

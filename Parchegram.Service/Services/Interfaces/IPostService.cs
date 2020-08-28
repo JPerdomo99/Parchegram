@@ -1,6 +1,5 @@
 ﻿using Parchegram.Model.Post.Request;
 using Parchegram.Model.Request.Post;
-using Parchegram.Model.Response;
 using Parchegram.Model.Response.General;
 using Parchegram.Model.Response.Post;
 using System.Collections.Generic;
@@ -16,7 +15,7 @@ namespace Parchegram.Service.Services.Interfaces
 
         public bool DeletePost(int id);
 
-        public ICollection<PostListResponse> GetPostList(string nameUser);
+        public Task<ICollection<PostResponse>> GetPostList(string nameUser);
 
         public PostResponse GetPostById(int id);
     }

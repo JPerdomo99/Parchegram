@@ -9,6 +9,7 @@ using Parchegram.Model.Request.Post;
 using Parchegram.Model.Response;
 using Parchegram.Model.Response.General;
 using Parchegram.Model.Response.Post;
+using Parchegram.Service.ClassesSupport;
 using Parchegram.Service.Services.Interfaces;
 using Parchegram.Service.Tools;
 using System;
@@ -179,12 +180,19 @@ namespace Parchegram.Service.Services.Implementations
             }
         }
 
-        public ICollection<PostListResponse> GetPostList(string nameUser)
+        /// <summary>
+        /// Devuelve un response con todos los post de los usuarios que sigo
+        /// Y los que los usuarios que siguen compartieron
+        /// </summary>
+        /// <param name="nameUser">Nombre del usuario</param>
+        /// <returns>Response con los posts cada uno con su numero de likes y comentarios limit(2)</returns>
+        public async Task<ICollection<PostResponse>> GetPostList(string nameUser)
         {
             using (var db = new ParchegramDBContext())
             {
                 try
                 {
+                    ImageUserProfile imageUserProfile = new ImageUserProfile(false);
                     IQueryable<PostListQueryResponse> queryResult = GetPostListQueryResponses(1);
                     ICollection<PostResponse> listPosts = new List<PostResponse>();
                     ILikeService likeService = new LikeService();
@@ -204,29 +212,24 @@ namespace Parchegram.Service.Services.Implementations
                             postResponse.Date = post.QueryPost.Date;
 
                         if (post.QueryPost.PathFile != null)
-                            postResponse.File = GetFile(post.QueryPost.PathFile);
+                            postResponse.File = await Image.GetFile(post.QueryPost.PathFile);
 
+                        // UserOwner
+                        postResponse.IdUserOwner = post.QueryUserOwner.Id;
+                        postResponse.NameUserOwner = post.QueryUserOwner.NameUser;
+                        postResponse.ImageProfileUserOwner = await imageUserProfile.GetImageUser(post.QueryUserOwner.Id, 'S');
 
-                        if (item.subTempFollow.Equals(null))
-                            postResponseTest.Date = item.subTempShare.Date;
-                        else
-                            postResponseTest.Date = item.tempPost.Date;
-
-                        postResponseTest.IdUserFollowing = item.subTempFollow.IdUserFollowing;
-                        // Imagen del usuario que subio el post en bytes
-
-                        if (item.subTempShare != null)
+                        // UserShare
+                        if (post.QueryShare != null)
                         {
-                            postResponseTest.IdUserShare = item.subTempShare.IdUser;
-                            // Nombre del usuario
-                            // Imagen del usuario que compartio el post en bytes
+                            postResponse.IdUserShare = post.QueryUserShare.Id;
+                            postResponse.NameUserShare = post.QueryUserShare.NameUser;
+                            postResponse.ImageProfileUserShare = await imageUserProfile.GetImageUser(post.QueryUserShare.Id, 'S');
                         }
-
-                        post.NumLikes = likeService.GetNumLikes(post.IdPost);
-                        post.CommentsByPost = commentService.GetCommentsByPost(post.IdPost, false);
-                        if (post.PathFile != null)
-                            post.File = GetFile(post.PathFile);
-                        listPosts.Add(post);
+                         
+                        postResponse.NumberLikes = likeService.GetNumLikes(post.QueryPost.Id);
+                        postResponse.CommentsByPost = commentService.GetCommentsByPost(post.QueryPost.Id, false);
+                        listPosts.Add(postResponse);
                     }
 
                     return listPosts;
@@ -312,18 +315,6 @@ namespace Parchegram.Service.Services.Implementations
             {
                 _logger.LogInformation(e.Message);
             }
-        }
-
-        private byte[] GetFile(string fullPath)
-        {
-            byte[] result;
-            using (FileStream file = File.Open(fullPath, FileMode.Open))
-            {
-                result = new byte[file.Length];
-                file.ReadAsync(result, 0, (int)file.Length);
-            }
-
-            return result;
         }
 
         /// <summary>
