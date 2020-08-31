@@ -7,6 +7,7 @@ namespace Parchegram.Model.Models
     {
         public Post()
         {
+            Like = new HashSet<Like>();
             LogPost = new HashSet<LogPost>();
         }
 
@@ -19,6 +20,7 @@ namespace Parchegram.Model.Models
 
         public virtual TypePost IdTypePostNavigation { get; set; }
         public virtual User IdUserNavigation { get; set; }
+        public virtual ICollection<Like> Like { get; set; }
         public virtual ICollection<LogPost> LogPost { get; set; }
     }
 }

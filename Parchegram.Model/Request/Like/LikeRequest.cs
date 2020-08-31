@@ -11,6 +11,6 @@ namespace Parchegram.Model.Request.Like
         public int IdPost { get; set; }
 
         [Required]
-        public int IdUser { get; set; }
+        public string NameUser { get; set; }
     }
 }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Parchegram.Service.ClassesSupport
 {
-    public class Image
+    public static class Image
     {
         /// <summary>
         /// Sobrecarga privada para obtener un archivo en byte[] directamente de un IFormFile

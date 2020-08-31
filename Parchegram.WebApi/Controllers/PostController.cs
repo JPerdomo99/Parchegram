@@ -45,7 +45,7 @@ namespace Parchegram.WebApi.Controllers
         [HttpGet("GetPosts/{nameUser}")]
         public async Task<IActionResult> GetPostList([FromRoute] string nameUser)
         {
-            ICollection<PostResponse> result = await _postService.GetPostList(nameUser);
+            Response result = await _postService.GetPostList(nameUser);
 
             return Ok(result);
         }

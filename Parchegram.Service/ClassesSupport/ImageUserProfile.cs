@@ -39,7 +39,6 @@ namespace Parchegram.Service.ClassesSupport
                     if (user != null)
                     {
                         string[] paths = new string[2] { _createPath(formFile, "S"), _createPath(formFile, "M") };
-                        Image image = new Image();
                         byte[] imageProfile = Image.GetFile(formFile);
                         MagickImage[] images = ResizeImages(imageProfile);
                         CopyImagesToPath(images, paths, user.Id);
@@ -137,10 +136,15 @@ namespace Parchegram.Service.ClassesSupport
                 try
                 {
                     UserImageProfile userImageProfile = await db.UserImageProfile.Where(u => u.IdUser.Equals(idUser)).FirstOrDefaultAsync();
-                    if (size.Equals('M'))
-                        return await Image.GetFile(userImageProfile.PathImageS);
-                    else
-                        return await Image.GetFile(userImageProfile.PathImageM);
+                    if (userImageProfile != null)
+                    {
+                        if (size.Equals('M'))
+                            return await Image.GetFile(userImageProfile.PathImageS);
+                        else
+                            return await Image.GetFile(userImageProfile.PathImageM);
+                    }
+
+                    return null;
                 }
                 catch (Exception e)
                 {

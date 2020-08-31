@@ -31,6 +31,9 @@ namespace Parchegram.Model.Response.Post
 
         public byte[] ImageProfileUserShare { get; set; }
 
+        // If the user liked the publication
+        public bool LikeUser { get; set; }
+
         // NumLikes
         public int NumberLikes { get; set; }
     }

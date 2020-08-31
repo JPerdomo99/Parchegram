@@ -30,7 +30,7 @@ namespace Parchegram.Model.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseSqlServer("Server=localhost;Database=ParchegramDB;Trusted_Connection=True");
+                optionsBuilder.UseSqlServer("Server=localhost;Database=ParchegramDB;Trusted_Connection=True;");
             }
         }
 
@@ -78,16 +78,16 @@ namespace Parchegram.Model.Models
 
             modelBuilder.Entity<Like>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => new { e.IdUser, e.IdPost });
 
                 entity.HasOne(d => d.IdPostNavigation)
-                    .WithMany()
+                    .WithMany(p => p.Like)
                     .HasForeignKey(d => d.IdPost)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Like_Post");
 
                 entity.HasOne(d => d.IdUserNavigation)
-                    .WithMany()
+                    .WithMany(p => p.Like)
                     .HasForeignKey(d => d.IdUser)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Like_User");
@@ -117,9 +117,7 @@ namespace Parchegram.Model.Models
             {
                 entity.Property(e => e.Date).HasColumnType("datetime");
 
-                entity.Property(e => e.Description)
-                    .HasMaxLength(3000)
-                    .IsUnicode(false);
+                entity.Property(e => e.Description).HasMaxLength(3000);
 
                 entity.Property(e => e.PathFile)
                     .HasMaxLength(1000)

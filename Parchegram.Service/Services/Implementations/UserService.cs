@@ -105,7 +105,7 @@ namespace Parchegram.Service.Services.Implementations
                         return response.GetResponse("No se pudo guardar el usuario", 0, false);
                     } else
                     {
-                        string datoUsuario = userEmail != null ? datoUsuario = "Email" : (userNameUser != null ? datoUsuario = "Name User" : "");
+                        string datoUsuario = userEmail != null ? datoUsuario = "Email" : (userNameUser != null ? datoUsuario = "Name User" : string.Empty);
                         return response.GetResponse($"Ya hay un usuario registrado con ese dato: {datoUsuario}", 0, false);
                     }
                 }
@@ -341,7 +341,6 @@ namespace Parchegram.Service.Services.Implementations
                     userConfigResponse.NameUser = userConfig.NameUser;
                     try
                     {
-                        Image image = new Image();
                         userConfigResponse.ImageProfile = await Image.GetFile(userConfig.PathImageS);
                     }
                     catch (Exception e)
@@ -350,7 +349,7 @@ namespace Parchegram.Service.Services.Implementations
                         userConfigResponse.ImageProfile = null;
                     }
 
-                    return response.GetResponse("Datos obtenidos correctamente", 0, null);
+                    return response.GetResponse("Datos obtenidos correctamente", 1, userConfigResponse);
                 }
                 catch (Exception e)
                 {

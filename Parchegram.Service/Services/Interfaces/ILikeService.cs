@@ -1,16 +1,18 @@
 ﻿using Parchegram.Model.Request.Like;
+using Parchegram.Model.Response.General;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Parchegram.Service.Services.Interfaces
 {
     public interface ILikeService
     {
-        public bool AddLike(LikeRequest likeRequest);
+        public Task<Response> AddLike(LikeRequest likeRequest);
+
+        public Task<Response> DeleteLike(LikeRequest likeRequest);
 
         public int GetNumLikes(int idPost);
-
-        public bool DeleteLike(LikeRequest likeRequest);
     }
 }

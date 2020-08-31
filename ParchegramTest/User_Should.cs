@@ -15,7 +15,7 @@ namespace ParchegramTest
             _userService = new UserService();
         }
 
-        [Fact]
+        //[Fact]
         public void NameUserUnique_ReturnFalse()
         {
             Response response = _userService.NameUserUnique("Julian1999");
@@ -24,7 +24,7 @@ namespace ParchegramTest
             Assert.False(result, "Nombre de usuario ocupado");
         }
 
-        [Fact]
+        //[Fact]
         public void EmailUnique_ReturnFalse()
         {
             Response response = _userService.EmailUnique("atehortua199@gmail.com");
@@ -33,7 +33,7 @@ namespace ParchegramTest
             Assert.False(result, "El email ya esta en uso");
         }
 
-        [Fact]
+        //[Fact]
         public async void UserConfig_ReturnFalse()
         {
             ConfigUserRequest configUserRequest = new ConfigUserRequest();

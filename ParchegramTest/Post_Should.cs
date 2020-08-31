@@ -1,6 +1,7 @@
 ﻿using Parchegram.Model.Models;
 using Parchegram.Model.Post.Request;
 using Parchegram.Model.Request.Post;
+using Parchegram.Model.Response.General;
 using Parchegram.Model.Response.Post;
 using Parchegram.Service.Services.Implementations;
 using System;
@@ -53,6 +54,20 @@ namespace ParchegramTest
             PostResponse post = _postService.GetPostById(1);
 
             Assert.NotNull(post);
+        }
+
+        [Fact]
+        public async void GetPostList_NoNull()
+        {
+            Response response = await _postService.GetPostList("Julian9999");
+            Assert.NotNull(response.Data);
+        }
+
+        [Fact]
+        public async void GetPostList_Null()
+        {
+            Response response = await _postService.GetPostList("NoExists");
+            Assert.Null(response);
         }
     }
 }

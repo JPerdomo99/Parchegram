@@ -16,5 +16,8 @@ namespace Parchegram.Model.Response.Post
         public Follow QueryFollow { get; set; }
 
         public Models.User QueryUserShare { get; set; }
+
+        // Si el usuario le dio like a este post
+        public Like QueryLike { get; set; }
     }
 }
