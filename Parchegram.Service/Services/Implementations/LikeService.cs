@@ -33,7 +33,8 @@ namespace Parchegram.Service.Services.Implementations
                     User user = await db.User.Where(u => u.NameUser.Equals(likeRequest.NameUser)).FirstOrDefaultAsync();
                     if (user != null)
                     {
-                        Like like = await db.Like.Where(l => l.IdPost.Equals(likeRequest.IdPost) && l.IdUser.Equals(user.Id)).FirstOrDefaultAsync();
+                        Like like = await db.Like.Where(l => l.IdPost.Equals(likeRequest.IdPost) &&
+                        l.IdUser.Equals(user.Id)).FirstOrDefaultAsync();
                         if (like == null)
                         {
                             like = new Like();
@@ -56,17 +57,18 @@ namespace Parchegram.Service.Services.Implementations
             }
         }
 
-        public async Task<Response> DeleteLike(LikeRequest likeRequest)
+        public async Task<Response> DeleteLike(int idPost, string nameUser)
         {
             Response response = new Response();
             try
             {
                 using (var db = new ParchegramDBContext())
                 {
-                    User user = await db.User.Where(u => u.NameUser.Equals(likeRequest.NameUser)).FirstOrDefaultAsync();
+                    User user = await db.User.Where(u => u.NameUser.Equals(nameUser)).FirstOrDefaultAsync();
                     if (user != null)
                     {
-                        Like like = await db.Like.Where(l => l.IdPost.Equals(likeRequest.IdPost) && l.IdUser.Equals(user.Id)).FirstOrDefaultAsync();
+                        Like like = await db.Like.Where(l => l.IdPost.Equals(idPost) && 
+                        l.IdUser.Equals(user.Id)).FirstOrDefaultAsync();
                         if (like != null)
                         {
                             db.Remove(like);

@@ -78,6 +78,7 @@ namespace Parchegram.WebApi
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<ILikeService, LikeService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

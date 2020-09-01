@@ -11,7 +11,7 @@ namespace Parchegram.Service.Services.Interfaces
     {
         public Task<Response> AddLike(LikeRequest likeRequest);
 
-        public Task<Response> DeleteLike(LikeRequest likeRequest);
+        public Task<Response> DeleteLike(int idPost, string nameUser);
 
         public int GetNumLikes(int idPost);
     }

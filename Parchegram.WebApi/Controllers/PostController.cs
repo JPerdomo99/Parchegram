@@ -31,15 +31,16 @@ namespace Parchegram.WebApi.Controllers
 
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromForm] CreatePostRequest createPostRequest)
-        {
+        {   
             if (ModelState.IsValid)
             {
                 Response result = await _postService.CreatePost(createPostRequest);
-
                 return Ok(result);
+            } else
+            {
+                Response response = new Response();
+                return BadRequest(response.GetResponse("Modelo no válido", 0, null));
             }
-
-            return BadRequest();    
         }
 
         [HttpGet("GetPosts/{nameUser}")]
