@@ -1,21 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Parchegram.Model.Common;
 using Parchegram.Service.Services.Implementations;
 using Parchegram.Service.Services.Interfaces;
+using System.Text;
 
 namespace Parchegram.WebApi
 {
@@ -40,7 +33,8 @@ namespace Parchegram.WebApi
                 options.AddPolicy(name: MyAllowSpecificOrigins,
                                   builder =>
                                   {
-                                      builder.WithOrigins("http://localhost:8080")
+                                      builder.WithOrigins("http://localhost:8080",
+                                          "http://127.0.0.1:5500")
                                       .AllowAnyHeader()
                                       .AllowAnyMethod();
                                   });

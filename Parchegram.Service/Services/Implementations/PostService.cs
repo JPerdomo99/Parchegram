@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic;
 using Parchegram.Model.Models;
 using Parchegram.Model.Post.Request;
 using Parchegram.Model.Request.Post;
@@ -11,6 +12,7 @@ using Parchegram.Service.Services.Interfaces;
 using Parchegram.Service.Tools;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -228,12 +230,75 @@ namespace Parchegram.Service.Services.Implementations
         /// <returns>Collection de PostResponse</returns>
         private async Task<PostListPaginateResponse> GetPostListPaginateResponse(int idUser, int page, ParchegramDBContext db)
         {
-            ImageUserProfile imageUserProfile = new ImageUserProfile(false);
-            IQueryable<PostListQueryResponse> queryResult = GetPostListQueryResponses(idUser, page, db);
+            IQueryable<PostListQueryResponse> queryPostResponses = GetPostsQueryResponses(idUser, db);
+            ICollection<PostResponse> postResponsesCollection = await ProcessPosts(queryPostResponses);
+            IOrderedEnumerable<PostResponse> sortedPostResponses = GetPostsOrder(postResponsesCollection);
+            IImmutableList<PostResponse> postResponses = GetPostspaginate(sortedPostResponses, page);
+            PostListPaginateResponse postListPaginateResponse = new PostListPaginateResponse(postResponses, page);
+
+            return postListPaginateResponse;
+        }
+
+        /// <summary>
+        /// Ejecuta consulta saca todos los post con uniones y restricciones y devuelve el resultado
+        /// </summary>
+        /// <param name="idUser">Id del usuario al cual le vamos a mostrar los posts</param>
+        /// <returns>Devuelve la consulta que contiene los post que se devolveran al cliente correspondiente</returns>
+        private IQueryable<PostListQueryResponse> GetPostsQueryResponses(int idUser, ParchegramDBContext parchegramDBContext)
+        {
+            try
+            {
+                IQueryable<PostListQueryResponse> query = (from tempPost in parchegramDBContext.Post
+
+                                                           join tempUserOwner in parchegramDBContext.User on tempPost.IdUser equals tempUserOwner.Id
+
+                                                           join tempShare in parchegramDBContext.Share on tempPost.Id equals tempShare.IdPost into leftTempShare
+                                                           from subTempShare in leftTempShare.DefaultIfEmpty()
+
+                                                           join tempFollow in parchegramDBContext.Follow on tempPost.IdUser equals tempFollow.IdUserFollowing into leftTempFollow
+                                                           from subTempFollow in leftTempFollow.DefaultIfEmpty()
+
+                                                           join tempUserShare in parchegramDBContext.User on subTempShare.IdUser equals tempUserShare.Id into leftTempUserShare
+                                                           from subTempUserShare in leftTempUserShare.DefaultIfEmpty()
+
+                                                           join tempLike in parchegramDBContext.Like on tempPost.Id equals tempLike.IdPost into leftTempLike
+                                                           from subTempLike in leftTempLike.DefaultIfEmpty()
+
+                                                               // Si el que compartio el post es seguido por el usuario 1
+                                                           where subTempFollow.IdUserFollower.Equals(1) ||
+                                                           parchegramDBContext.Follow.Any(f => f.IdUserFollower.Equals(1) && f.IdUserFollowing.Equals(subTempShare.IdUser)) ||
+                                                           subTempLike.IdUser.Equals(1)
+
+                                                           select new PostListQueryResponse
+                                                           {
+                                                               QueryPost = tempPost,
+                                                               QueryUserOwner = tempUserOwner,
+                                                               QueryShare = subTempShare,
+                                                               QueryFollow = subTempFollow,
+                                                               QueryUserShare = subTempUserShare,
+                                                               QueryLike = subTempLike
+                                                           });
+                return query;
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation(e.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Recorre la consulta asignando fecha subido/compartido, comentarios y numero de likes
+        /// </summary>
+        /// <param name="postListQueryResponses">Query para recorrer</param>
+        /// <returns>Colección </returns>
+        private async Task<ICollection<PostResponse>> ProcessPosts(IQueryable<PostListQueryResponse> postListQueryResponses)
+        {
             ICollection<PostResponse> postResponses = new List<PostResponse>();
+            ImageUserProfile imageUserProfile = new ImageUserProfile(false);
             ILikeService likeService = new LikeService();
             ICommentService commentService = new CommentService();
-            foreach (var post in queryResult)
+            foreach (var post in postListQueryResponses)
             {
                 PostResponse postResponse = new PostResponse();
 
@@ -270,58 +335,17 @@ namespace Parchegram.Service.Services.Implementations
 
                 postResponses.Add(postResponse);
             }
-            PostListPaginateResponse postListPaginateResponse = new PostListPaginateResponse(postResponses, page);
-
-            return postListPaginateResponse;
+            return postResponses;
         }
 
-        /// <summary>
-        /// Ejecuta consulta de posts con uniones y devuelve el resultado
-        /// </summary>
-        /// <param name="idUser">Id del usuario al cual le vamos a mostrar los posts</param>
-        /// <returns>Devuelve la consulta que contiene los post que se devolveran al cliente correspondiente</returns>
-        private IQueryable<PostListQueryResponse> GetPostListQueryResponses(int idUser, int page, ParchegramDBContext parchegramDBContext)
+        private IOrderedEnumerable<PostResponse> GetPostsOrder(ICollection<PostResponse> postResponsesCollection)
         {
-            try
-            {
-                int recordsPerPage = 3;
-                IQueryable<PostListQueryResponse> query = (from tempPost in parchegramDBContext.Post
+            return postResponsesCollection.OrderByDescending(p => p.Date);
+        }
 
-                                                           join tempUserOwner in parchegramDBContext.User on tempPost.IdUser equals tempUserOwner.Id
-
-                                                           join tempShare in parchegramDBContext.Share on tempPost.Id equals tempShare.IdPost into leftTempShare
-                                                           from subTempShare in leftTempShare.DefaultIfEmpty()
-
-                                                           join tempFollow in parchegramDBContext.Follow on tempPost.IdUser equals tempFollow.IdUserFollowing into leftTempFollow
-                                                           from subTempFollow in leftTempFollow.DefaultIfEmpty()
-
-                                                           join tempUserShare in parchegramDBContext.User on subTempShare.IdUser equals tempUserShare.Id into leftTempUserShare
-                                                           from subTempUserShare in leftTempUserShare.DefaultIfEmpty()
-
-                                                           join tempLike in parchegramDBContext.Like on tempPost.Id equals tempLike.IdPost into leftTempLike
-                                                           from subTempLike in leftTempLike.DefaultIfEmpty()
-
-                                                               // Si el que compartio el post es seguido por el usuario 1
-                                                           where subTempFollow.IdUserFollower.Equals(1) ||
-                                                           parchegramDBContext.Follow.Any(f => f.IdUserFollower.Equals(1) && f.IdUserFollowing.Equals(subTempShare.IdUser)) ||
-                                                           subTempLike.IdUser.Equals(1)
-
-                                                           select new PostListQueryResponse
-                                                           {
-                                                               QueryPost = tempPost,
-                                                               QueryUserOwner = tempUserOwner,
-                                                               QueryShare = subTempShare,
-                                                               QueryFollow = subTempFollow,
-                                                               QueryUserShare = subTempUserShare,
-                                                               QueryLike = subTempLike
-                                                           }).Skip((page - 1) * recordsPerPage).Take(recordsPerPage);
-                return query;
-            }
-            catch (Exception e)
-            {
-                _logger.LogInformation(e.Message);
-                return null;
-            }
+        private IImmutableList<PostResponse> GetPostspaginate(IOrderedEnumerable<PostResponse> sortedPostResponses, int page)
+        {
+            return sortedPostResponses.Skip((page - 1) * 3).Take(3).ToImmutableList();
         }
 
         private string GetPathFile(IFormFile file)
