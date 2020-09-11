@@ -5,9 +5,7 @@ using Parchegram.Model.Models;
 using Parchegram.Model.Request.Email;
 using Parchegram.Service.Services.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Parchegram.Service.Services.Implementations
 {
@@ -39,7 +37,8 @@ namespace Parchegram.Service.Services.Implementations
                             return true;
 
                         return false;
-                    } else
+                    }
+                    else
                     {
                         return true;
                     }

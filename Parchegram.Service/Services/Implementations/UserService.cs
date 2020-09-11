@@ -81,7 +81,6 @@ namespace Parchegram.Service.Services.Implementations
         /// <returns>Un objeto Response que define el exito de la operación</returns>
         public async Task<Response> Register(RegisterRequest registerRequest)
         {
-            UserResponse userResponse = new UserResponse();
             using (var db = new ParchegramDBContext())
             {
                 Response response = new Response();
@@ -90,7 +89,7 @@ namespace Parchegram.Service.Services.Implementations
                     User userEmail = await db.User.Where(u => u.Email.Equals(registerRequest.Email)).FirstOrDefaultAsync();
                     User userNameUser = await db.User.Where(u => u.NameUser.Equals(registerRequest.NameUser)).FirstOrDefaultAsync();
                     // Los dos son datos unicos, no puede haber otro con el mismo Email y no puede haber otro con el mismo Nombre
-                    if (userEmail != null && userNameUser != null)
+                    if (userEmail == null && userNameUser == null)
                     {
                         User user = new User();
                         user.NameUser = registerRequest.NameUser;

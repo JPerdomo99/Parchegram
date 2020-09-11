@@ -8,10 +8,13 @@ namespace Parchegram.Model.Response.Post
 
         public int CurrentPage { get; set; }
 
-        public PostListPaginateResponse(IImmutableList<PostResponse> postList, int currentPage)
+        public int TotalRows { get; set; }
+
+        public PostListPaginateResponse(IImmutableList<PostResponse> postList, int currentPage, int totalRows)
         {
             PostList = postList;
             CurrentPage = currentPage;
+            TotalRows = totalRows;
         }
     }
 }
