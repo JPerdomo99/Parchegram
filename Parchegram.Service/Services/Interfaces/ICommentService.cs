@@ -1,16 +1,14 @@
 ﻿using Parchegram.Model.Request.Comment;
-using Parchegram.Model.Response.Comment;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Parchegram.Model.Response.General;
+using System.Threading.Tasks;
 
 namespace Parchegram.Service.Services.Interfaces
 {
     public interface ICommentService
     {
-        public bool PostComment(PostCommentRequest postCommentRequest);
+        public Task<Response> PostComment(PostCommentRequest postCommentRequest);
 
-        public ICollection<PostCommentResponse> GetCommentsByPost(int idPost, bool byId);
+        public Task<Response> GetCommentsByPost(int idPost, int limit = 0);
 
         public bool DeleteComment(DeleteCommentRequest deleteCommentRequest);
     }

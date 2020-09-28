@@ -1,12 +1,15 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Parchegram.Model.Models;
 using Parchegram.Model.Request.Comment;
 using Parchegram.Model.Response.Comment;
+using Parchegram.Model.Response.General;
 using Parchegram.Service.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Parchegram.Service.Services.Implementations
 {
@@ -21,87 +24,91 @@ namespace Parchegram.Service.Services.Implementations
 
         public CommentService()
         {
-
         }
 
-        public ICollection<PostCommentResponse> GetCommentsByPost(int idPost, bool byId)
+        public async Task<Response> GetCommentsByPost(int idPost, int limit = 0)
         {
+            Response response = new Response();
             using (var db = new ParchegramDBContext())
             {
                 try
                 {
-                    ICollection<PostCommentResponse> commentsByPost = null;
-                    if (byId)
-                    {
-                        commentsByPost =
-                                            (from comment in db.Comment
-                                             join user in db.User on comment.IdUser equals user.Id
-                                             where comment.IdPost == idPost
-                                             orderby comment.Date
-                                             select new PostCommentResponse
-                                             {
-                                                 NameUser = user.NameUser,
-                                                 IdUser = comment.IdUser,
-                                                 CommentText = comment.CommentText,
-                                                 Date = comment.Date
-                                             }).ToList(); ;
-                    }
-                    else
-                    {
-                        commentsByPost =
-                                            (from comment in db.Comment
-                                             join user in db.User on comment.IdUser equals user.Id
-                                             where comment.IdPost == idPost
-                                             orderby comment.Date
-                                             select new PostCommentResponse
-                                             {
-                                                 NameUser = user.NameUser,
-                                                 IdUser = comment.IdUser,
-                                                 CommentText = comment.CommentText,
-                                                 Date = comment.Date
-                                             }).Take(2).ToList();
-                    }
+                    Post post = await db.Post.Where(p => p.Id.Equals(idPost)).FirstOrDefaultAsync();
+                    if (post == null)
+                        return response.GetResponse("El post no existe", 0, null);
 
-                    return commentsByPost;
+                    ICollection<PostCommentResponse> postCommentResponses;
+                    if (limit > 0)
+                    {
+                        postCommentResponses = await
+                                                (from comment in db.Comment
+                                                join user in db.User on comment.IdUser equals user.Id
+                                                where comment.IdPost == idPost
+                                                orderby comment.Date
+                                                select new PostCommentResponse
+                                                {
+                                                    IdComment = comment.Id,
+                                                    NameUser = user.NameUser,
+                                                    CommentText = comment.CommentText,
+                                                    Date = comment.Date
+                                                }).OrderByDescending(c => c.Date).Take(limit).ToListAsync();
+                     
+                        return response.GetResponse("Exito al obtener los comentarios con limite", 1, postCommentResponses);
+                    }
+                    postCommentResponses = await
+                                            (from comment in db.Comment
+                                            join user in db.User on comment.IdUser equals user.Id
+                                            where comment.IdPost == idPost
+                                            orderby comment.Date
+                                            select new PostCommentResponse
+                                            {
+                                                IdComment = comment.Id,
+                                                NameUser = user.NameUser,
+                                                CommentText = comment.CommentText,
+                                                Date = comment.Date
+                                            }).OrderByDescending(c => c.Date).ToListAsync();
+
+                    return response.GetResponse("Exito al obtener los comentarios sin limite", 1, postCommentResponses);
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    return null;
+                    return response.GetResponse($"Ha ocurrido un error inesperado {e.Message}", 0, null);
                 }
             }
         }
 
-        public bool PostComment(PostCommentRequest postCommentRequest)
+        public async Task<Response> PostComment(PostCommentRequest postCommentRequest)
         {
+            Response response = new Response();
             using (var db = new ParchegramDBContext())
             {
                 try
                 {
-                    Post oPost = db.Post.Where(p => p.Id == postCommentRequest.IdPost).FirstOrDefault();
-                    if (oPost == null)
-                        return false;
+                    Post post = db.Post.Where(p => p.Id == postCommentRequest.IdPost).FirstOrDefault();
+                    if (post == null)
+                        return response.GetResponse("El post no existe", 0, false);
 
-                    User oUser = db.User.Where(u => u.Id == postCommentRequest.IdUser).FirstOrDefault();
-                    if (oUser == null)
-                        return false;
+                    User user = db.User.Where(u => u.NameUser == postCommentRequest.NameUser).FirstOrDefault();
+                    if (user == null)
+                        return response.GetResponse("El usuario no existe", 0, false);
 
-                    Comment oComment = new Comment();
-                    oComment.IdUser = postCommentRequest.IdUser;
-                    oComment.IdPost = postCommentRequest.IdPost;
-                    oComment.CommentText = postCommentRequest.CommentText;
-                    oComment.Date = DateTime.Now;
+                    Comment comment = new Comment();
+                    comment.IdUser = user.Id;
+                    comment.IdPost = postCommentRequest.IdPost;
+                    comment.CommentText = postCommentRequest.CommentText;
+                    comment.Date = DateTime.Now;
 
-                    db.Comment.Add(oComment);
-                    if (db.SaveChanges() == 1)
-                        return true;
+                    db.Comment.Add(comment);
+                    if (await db.SaveChangesAsync() == 1)
+                        return response.GetResponse("Comentario guardado con exito", 1, true);
                     else
-                        return false;
+                        return response.GetResponse("El comentario no se guardo correctamente", 0, false);
                 }
                 catch (Exception e)
                 {
                     _logger.LogInformation(e.Message);
-                    return false;
+                    return response.GetResponse($"Hubo un error inesperado {e.Message}", 0, false);
                 }
             }
         }

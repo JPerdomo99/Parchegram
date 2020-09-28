@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Parchegram.Model.Models;
-using Parchegram.Model.Post.Request;
 using Parchegram.Model.Request.Post;
 using Parchegram.Model.Response.General;
 using Parchegram.Model.Response.Post;
@@ -231,10 +230,11 @@ namespace Parchegram.Service.Services.Implementations
             IOrderedEnumerable<PostResponse> sortedPostResponses = GetPostsOrder(postResponsesCollection);
             IImmutableList<PostResponse> postResponses = GetPostspaginate(sortedPostResponses, page);
             int totalRows = sortedPostResponses.Count();
-            PostListPaginateResponse postListPaginateResponse = new PostListPaginateResponse(postResponses, page, totalRows);
+            PostListPaginateResponse postListPaginateResponse = new PostListPaginateResponse(postResponses, totalRows);
             
             return postListPaginateResponse;
         }
+
         /// <summary>
         /// Ejecuta consulta saca todos los post con uniones y restricciones y devuelve el resultado
         /// </summary>
@@ -293,7 +293,6 @@ namespace Parchegram.Service.Services.Implementations
             ICollection<PostResponse> postResponses = new List<PostResponse>();
             ImageUserProfile imageUserProfile = new ImageUserProfile(false);
             ILikeService likeService = new LikeService();
-            ICommentService commentService = new CommentService();
             foreach (var post in postListQueryResponses)
             {
                 PostResponse postResponse = new PostResponse();
@@ -325,9 +324,6 @@ namespace Parchegram.Service.Services.Implementations
 
                 // Numero de likes de la publicación
                 postResponse.NumberLikes = likeService.GetNumLikes(post.QueryPost.Id);
-
-                // Comentarios de la publicación maximo 2 comentarios
-                postResponse.CommentsByPost = commentService.GetCommentsByPost(post.QueryPost.Id, false);
 
                 postResponses.Add(postResponse);
             }

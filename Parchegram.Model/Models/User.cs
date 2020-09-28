@@ -7,10 +7,10 @@ namespace Parchegram.Model.Models
     {
         public User()
         {
+            Comment = new HashSet<Comment>();
             FollowIdUserFollowerNavigation = new HashSet<Follow>();
             FollowIdUserFollowingNavigation = new HashSet<Follow>();
             Like = new HashSet<Like>();
-            LogPost = new HashSet<LogPost>();
             Post = new HashSet<Post>();
             UserImageProfile = new HashSet<UserImageProfile>();
         }
@@ -23,10 +23,10 @@ namespace Parchegram.Model.Models
         public bool ConfirmEmail { get; set; }
         public string CodeConfirmEmail { get; set; }
 
+        public virtual ICollection<Comment> Comment { get; set; }
         public virtual ICollection<Follow> FollowIdUserFollowerNavigation { get; set; }
         public virtual ICollection<Follow> FollowIdUserFollowingNavigation { get; set; }
         public virtual ICollection<Like> Like { get; set; }
-        public virtual ICollection<LogPost> LogPost { get; set; }
         public virtual ICollection<Post> Post { get; set; }
         public virtual ICollection<UserImageProfile> UserImageProfile { get; set; }
     }

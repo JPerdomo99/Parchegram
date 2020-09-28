@@ -1,14 +1,7 @@
-﻿using Parchegram.Model.Models;
-using Parchegram.Model.Post.Request;
-using Parchegram.Model.Request.Post;
+﻿using Parchegram.Model.Request.Post;
 using Parchegram.Model.Response.General;
 using Parchegram.Model.Response.Post;
 using Parchegram.Service.Services.Implementations;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace ParchegramTest

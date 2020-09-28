@@ -1,11 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.IO;
-using System.Text;                  
 
-namespace Parchegram.Model.Post.Request
+namespace Parchegram.Model.Request.Post
 {
     public class CreatePostRequest
     {

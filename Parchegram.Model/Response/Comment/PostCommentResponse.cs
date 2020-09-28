@@ -6,7 +6,7 @@ namespace Parchegram.Model.Response.Comment
 {
     public class PostCommentResponse
     {
-        public int IdUser { get; set; }
+        public int IdComment { get; set; }
 
         public string NameUser { get; set; }
 

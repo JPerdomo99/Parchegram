@@ -1,5 +1,4 @@
-﻿using Parchegram.Model.Post.Request;
-using Parchegram.Model.Request.Post;
+﻿using Parchegram.Model.Request.Post;
 using Parchegram.Model.Response.General;
 using Parchegram.Model.Response.Post;
 using System.Collections.Generic;

@@ -2,7 +2,7 @@
 
 namespace Parchegram.Model.Response.Post
 {
-    public class PostResponse : PostCommentsResponse
+    public class PostResponse
     {
         // Post
         public int IdPost { get; set; }

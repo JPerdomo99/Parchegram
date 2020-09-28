@@ -18,7 +18,6 @@ namespace Parchegram.Model.Models
         public virtual DbSet<Comment> Comment { get; set; }
         public virtual DbSet<Follow> Follow { get; set; }
         public virtual DbSet<Like> Like { get; set; }
-        public virtual DbSet<LogPost> LogPost { get; set; }
         public virtual DbSet<Post> Post { get; set; }
         public virtual DbSet<Share> Share { get; set; }
         public virtual DbSet<TypePost> TypePost { get; set; }
@@ -30,7 +29,7 @@ namespace Parchegram.Model.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseSqlServer("Server=localhost;Database=ParchegramDB;Trusted_Connection=True;");
+                optionsBuilder.UseSqlServer("Server=localhost;Database=ParchegramDB;Trusted_Connection=True");
             }
         }
 
@@ -38,22 +37,20 @@ namespace Parchegram.Model.Models
         {
             modelBuilder.Entity<Comment>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.Property(e => e.CommentText)
                     .IsRequired()
-                    .HasMaxLength(1200);
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.Date).HasColumnType("datetime");
 
                 entity.HasOne(d => d.IdPostNavigation)
-                    .WithMany()
+                    .WithMany(p => p.Comment)
                     .HasForeignKey(d => d.IdPost)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Comment_Post");
 
                 entity.HasOne(d => d.IdUserNavigation)
-                    .WithMany()
+                    .WithMany(p => p.Comment)
                     .HasForeignKey(d => d.IdUser)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Comment_User");
@@ -91,26 +88,6 @@ namespace Parchegram.Model.Models
                     .HasForeignKey(d => d.IdUser)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Like_User");
-            });
-
-            modelBuilder.Entity<LogPost>(entity =>
-            {
-                entity.HasKey(e => new { e.IdUser, e.IdPost })
-                    .HasName("PK__LogPost__7844EDEC6A80E81C");
-
-                entity.Property(e => e.Date).HasColumnType("datetime");
-
-                entity.HasOne(d => d.IdPostNavigation)
-                    .WithMany(p => p.LogPost)
-                    .HasForeignKey(d => d.IdPost)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_LogPost_Post");
-
-                entity.HasOne(d => d.IdUserNavigation)
-                    .WithMany(p => p.LogPost)
-                    .HasForeignKey(d => d.IdUser)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_LogPost_User");
             });
 
             modelBuilder.Entity<Post>(entity =>

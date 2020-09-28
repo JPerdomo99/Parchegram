@@ -5,6 +5,7 @@ namespace Parchegram.Model.Models
 {
     public partial class Comment
     {
+        public int Id { get; set; }
         public int IdUser { get; set; }
         public int IdPost { get; set; }
         public string CommentText { get; set; }

@@ -7,8 +7,8 @@ namespace Parchegram.Model.Models
     {
         public Post()
         {
+            Comment = new HashSet<Comment>();
             Like = new HashSet<Like>();
-            LogPost = new HashSet<LogPost>();
         }
 
         public int Id { get; set; }
@@ -20,7 +20,7 @@ namespace Parchegram.Model.Models
 
         public virtual TypePost IdTypePostNavigation { get; set; }
         public virtual User IdUserNavigation { get; set; }
+        public virtual ICollection<Comment> Comment { get; set; }
         public virtual ICollection<Like> Like { get; set; }
-        public virtual ICollection<LogPost> LogPost { get; set; }
     }
 }

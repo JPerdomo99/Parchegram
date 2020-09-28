@@ -8,14 +8,14 @@ namespace Parchegram.Model.Request.Comment
     public class PostCommentRequest
     {
         [Required]
-        public int IdUser { get; set; }
+        public string NameUser { get; set; }
 
         [Required]
         public int IdPost { get; set; }
 
         [Required]
         [MinLength(1)]
-        [MaxLength(1200)]
+        [MaxLength(500)]
         public string CommentText { get; set; }
     }
 }
