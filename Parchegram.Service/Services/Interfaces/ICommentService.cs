@@ -10,6 +10,8 @@ namespace Parchegram.Service.Services.Interfaces
 
         public Task<Response> GetCommentsByPost(int idPost, int limit = 0);
 
-        public bool DeleteComment(DeleteCommentRequest deleteCommentRequest);
+        public Task<Response> UpdateComment(UpdateCommentRequest updateCommentRequest);
+
+        public Task<Response> DeleteComment(DeleteCommentRequest deleteCommentRequest);
     }
 }

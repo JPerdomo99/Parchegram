@@ -39,5 +39,25 @@ namespace Parchegram.WebApi.Controllers
             Response response = new Response();
             return BadRequest(response.GetResponse("Modelo no valido", 0, false));
         }
+
+        [HttpDelete("Delete/{idPost}/{idComment}/{NameUser}")]
+        public async Task<IActionResult> Delete([FromRoute] int idPost, [FromRoute] int idComment, [FromRoute] string nameUser)
+        {
+            DeleteCommentRequest deleteCommentRequest = new DeleteCommentRequest(idPost, idComment, nameUser);
+            Response result = await _commentService.DeleteComment(deleteCommentRequest);
+            return Ok(result);
+        }
+
+        [HttpPut("Update")]
+        public async Task<IActionResult> Update([FromBody] UpdateCommentRequest updateCommentRequest)
+        {
+            if (ModelState.IsValid)
+            {
+                Response result = await _commentService.UpdateComment(updateCommentRequest);
+                return Ok(result);
+            }
+            Response response = new Response();
+            return BadRequest(response.GetResponse("Modelo no valido", 0, false));
+        }
     }
 }

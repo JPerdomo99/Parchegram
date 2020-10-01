@@ -7,10 +7,20 @@ namespace Parchegram.Model.Request.Comment
 {
     public class DeleteCommentRequest
     {
-        [Required]
-        public int IdUser { get; set; }
+        public DeleteCommentRequest(int idPost, int idComment, string nameUser)
+        {
+            IdPost = idPost;
+            IdComment = idComment;
+            NameUser = nameUser;
+        }
 
         [Required]
         public int IdPost { get; set; }
+
+        [Required]
+        public int IdComment { get; set; }
+
+        [Required]
+        public string NameUser { get; set; }
     }
 }
