@@ -16,6 +16,6 @@ namespace Parchegram.Service.Services.Interfaces
 
         public Task<Response> GetPostList(string nameUser, int page);
 
-        public PostResponse GetPostById(int id);
+        public Task<Response> GetPostById(int id);
     }
 }

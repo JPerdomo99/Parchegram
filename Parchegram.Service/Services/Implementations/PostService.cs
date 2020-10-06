@@ -71,7 +71,6 @@ namespace Parchegram.Service.Services.Implementations
                         post.Description = createPostRequest.Description;
                         post.IdUser = idUser;
                         post.IdTypePost = DefineTypePost(createPostRequest.File);
-                        //post.IdTypePost = createPostRequest.IdTypePost;
                         post.Date = DateTime.Now;
                         if (createPostRequest.IdTypePost != 3)
                         {
@@ -147,43 +146,26 @@ namespace Parchegram.Service.Services.Implementations
             }
         }
 
-        public PostResponse GetPostById(int id)
+        public async Task<Response> GetPostById(int id)
         {
-            using (var db = new ParchegramDBContext())
+            Response response = new Response();
+            try
             {
-                try
+                using (var db = new ParchegramDBContext())
                 {
-                    //PostResponse oPost =
-                    //                        (from post in db.Post
-                    //                         join user in db.User on post.IdUser equals user.Id
-                    //                         where post.IdUser == id
-                    //                         select new PostResponse
-                    //                         {
-                    //                             Id = post.Id,
-                    //                             Description = post.Description,
-                    //                             PathFile = post.PathFile,
-                    //                             Date = post.Date,
-                    //                             IdTypePost = post.IdTypePost,
-                    //                             IdUser = post.IdUser,
-                    //                             NameUser = user.NameUser
-                    //                         }).FirstOrDefault();
+                    Post post = await db.Post.Where(p => p.Id.Equals(id)).FirstOrDefaultAsync();
+                    if (post == null)
+                        return response.GetResponse("No existe el post", 0, null);
+                    PostListQueryResponse postListQueryResponse = await GetPostsQueryResponses(id, db, true);
+                    PostResponse postRensponse = await ProcessPosts(postListQueryResponse, true);
 
-                    //if (oPost == null)
-                    //    return null;
-
-                    //ILikeService oLikeService = new LikeService();
-                    //ICommentService oCommentService = new CommentService();
-                    //oPost.NumLikes = oLikeService.GetNumLikes(oPost.Id);
-                    //oPost.CommentsByPost = oCommentService.GetCommentsByPost(oPost.Id, true);
-
-                    //return oPost;
-                    return null;
+                    return response.GetResponse($"Exito al traer el post", 1, postRensponse);
                 }
-                catch (Exception e)
-                {
-                    _logger.LogInformation(e.Message);
-                    return null;
-                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation(e.Message);
+                return response.GetResponse($"Ha ocurrido un error inesperado {e.Message}", 0, null);
             }
         }
 
@@ -262,8 +244,8 @@ namespace Parchegram.Service.Services.Implementations
 
                                                                             // Si el que compartio el post es seguido por el usuario 1
                                                                         where subTempFollow.IdUserFollower.Equals(1) ||
-                                                                        parchegramDBContext.Follow.Any(f => f.IdUserFollower.Equals(1) && f.IdUserFollowing.Equals(subTempShare.IdUser)) ||
-                                                                        subTempLike.IdUser.Equals(1)
+                                                                        parchegramDBContext.Follow.Any(f => f.IdUserFollower.Equals(idUser) && f.IdUserFollowing.Equals(subTempShare.IdUser)) ||
+                                                                        subTempLike.IdUser.Equals(idUser)
 
                                                                         select new PostListQueryResponse
                                                                         {
@@ -271,7 +253,7 @@ namespace Parchegram.Service.Services.Implementations
                                                                             QueryUserOwner = tempUserOwner,
                                                                             QueryShare = subTempShare,
                                                                             QueryFollow = subTempFollow,
-                                                                              QueryUserShare = subTempUserShare,
+                                                                            QueryUserShare = subTempUserShare,
                                                                             QueryLike = subTempLike
                                                                         }); 
                 return queryPostResponses;
@@ -281,6 +263,26 @@ namespace Parchegram.Service.Services.Implementations
                 _logger.LogInformation(e.Message);
                 return null;
             }
+        }
+
+        private async Task<PostListQueryResponse> GetPostsQueryResponses(int idPost, ParchegramDBContext parchegramDBContext, bool byId)
+        {
+            PostListQueryResponse queryPostResponses = await (from tempPost in parchegramDBContext.Post
+
+                                                              join tempUserOwner in parchegramDBContext.User on tempPost.IdUser equals tempUserOwner.Id
+
+                                                              join tempLike in parchegramDBContext.Like on tempPost.Id equals tempLike.IdPost into leftTempLike
+                                                              from subTempLike in leftTempLike.DefaultIfEmpty()
+
+                                                              where tempPost.Id.Equals(idPost)
+
+                                                              select new PostListQueryResponse
+                                                              {
+                                                                  QueryPost = tempPost,
+                                                                  QueryUserOwner = tempUserOwner,
+                                                                  QueryLike = subTempLike
+                                                              }).FirstOrDefaultAsync();
+            return queryPostResponses;
         }
 
         /// <summary>
@@ -318,6 +320,7 @@ namespace Parchegram.Service.Services.Implementations
                     postResponse.IdUserShare = post.QueryUserShare.Id;
                     postResponse.NameUserShare = post.QueryUserShare.NameUser;
                     postResponse.ImageProfileUserShare = await imageUserProfile.GetImageUser(post.QueryUserShare.Id, 'S');
+                    postResponse.DateShare = post.QueryShare.Date;
                 }
 
                 postResponse.LikeUser = (post.QueryLike != null) ? true : false;
@@ -328,6 +331,41 @@ namespace Parchegram.Service.Services.Implementations
                 postResponses.Add(postResponse);
             }
             return postResponses;
+        }
+
+        private async Task<PostResponse> ProcessPosts(PostListQueryResponse postListQueryResponse, bool byId)
+        {
+            try
+            {
+                PostResponse postResponse = new PostResponse();
+                ImageUserProfile imageUserProfile = new ImageUserProfile(false);
+                ILikeService likeService = new LikeService();
+
+                // Post
+                postResponse.IdPost = postListQueryResponse.QueryPost.Id;
+                postResponse.IdTypePost = postListQueryResponse.QueryPost.IdTypePost;
+                postResponse.Description = postListQueryResponse.QueryPost.Description;
+                postResponse.Date = postListQueryResponse.QueryPost.Date;
+                if (postListQueryResponse.QueryPost.PathFile != null)
+                    postResponse.File = await Image.GetFile(postListQueryResponse.QueryPost.PathFile);
+
+                // UserOwner
+                postResponse.IdUserOwner = postListQueryResponse.QueryUserOwner.Id;
+                postResponse.NameUserOwner = postListQueryResponse.QueryUserOwner.NameUser;
+                postResponse.ImageProfileUserOwner = await imageUserProfile.GetImageUser(postListQueryResponse.QueryUserOwner.Id, 'S');
+
+                postResponse.LikeUser = (postListQueryResponse.QueryLike != null) ? true : false;
+
+                // Numero de likes de la publicación
+                postResponse.NumberLikes = likeService.GetNumLikes(postListQueryResponse.QueryPost.Id);
+
+                return postResponse;
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation(e.Message);
+                return null;
+            }
         }
 
         /// <summary>

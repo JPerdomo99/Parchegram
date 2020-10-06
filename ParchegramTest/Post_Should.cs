@@ -24,30 +24,30 @@ namespace ParchegramTest
         //    Assert.True(result, "Se guardo en la db"); 
         //}
 
-        //[Fact]
-        public void EditPost_ReturnTrue()
-        {
-            EditPostRequest editPostRequest = new EditPostRequest(1, "Primer post editado bien suavata", "", 3);
-            bool result = _postService.EditPost(editPostRequest);
+        ////[Fact]
+        //public void EditPost_ReturnTrue()
+        //{
+        //    EditPostRequest editPostRequest = new EditPostRequest(1, "Primer post editado bien suavata", "", 3);
+        //    bool result = _postService.EditPost(editPostRequest);
 
-            Assert.True(result, "Se actualizo el post en la db");
-        }
+        //    Assert.True(result, "Se actualizo el post en la db");
+        //}
 
-        //[Fact]
-        public void DeletePost_ReturnTrue()
-        {
-            bool result = _postService.DeletePost(2);
+        ////[Fact]
+        //public void DeletePost_ReturnTrue()
+        //{
+        //    bool result = _postService.DeletePost(2);
 
-            Assert.True(result, "Se elimino el post de la db");
-        }
+        //    Assert.True(result, "Se elimino el post de la db");
+        //}
 
-        //[Fact]
-        public void GetPostById()
-        {
-            PostResponse post = _postService.GetPostById(1);
+        ////[Fact]
+        //public void GetPostById()
+        //{
+        //    PostResponse post = _postService.GetPostById(1);
 
-            Assert.NotNull(post);
-        }
+        //    Assert.NotNull(post);
+        //}
 
         [Fact]
         public async void GetPostList_NoNull()

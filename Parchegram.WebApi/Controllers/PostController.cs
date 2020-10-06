@@ -21,10 +21,18 @@ namespace Parchegram.WebApi.Controllers
             _env = env;
         }
 
-        [HttpGet("GetFrase")]
-        public string GetFrase()
+        [HttpGet("GetPosts/{nameUser}/{page?}")]
+        public async Task<IActionResult> GetPostList([FromRoute] string nameUser, [FromRoute] int page = 1)
         {
-            return "Soy un hombre con muchos defectos, quizas por tratar de ser perfecto";
+            Response result = await _postService.GetPostList(nameUser, page);
+            return Ok(result);
+        }
+
+        [HttpGet("GetPostById/{id}")]
+        public async Task<IActionResult> GetPostById([FromRoute] int id)
+        {
+            Response result = await _postService.GetPostById(id);
+            return Ok(result);
         }
 
         [HttpPost("Create")]
@@ -37,14 +45,6 @@ namespace Parchegram.WebApi.Controllers
             }
             Response response = new Response();
             return BadRequest(response.GetResponse("Modelo no válido", 0, false));
-        }
-
-        [HttpGet("GetPosts/{nameUser}/{page?}")]
-        public async Task<IActionResult> GetPostList([FromRoute] string nameUser, [FromRoute] int page = 1)
-        {
-            Response result = await _postService.GetPostList(nameUser, page);
-
-            return Ok(result);
         }
 
         [HttpPost("ActionUpload")]
