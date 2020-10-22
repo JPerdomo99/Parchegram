@@ -14,6 +14,8 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Xabe.FFmpeg;
+using ImageMagick;
 
 namespace Parchegram.Service.Services.Implementations
 {
@@ -74,9 +76,10 @@ namespace Parchegram.Service.Services.Implementations
                         post.Date = DateTime.Now;
                         if (createPostRequest.IdTypePost != 3)
                         {
-                            string pathFile = GetPathFile(createPostRequest.File);
-                            post.PathFile = pathFile;
-                            SaveFile(createPostRequest.File);
+                            MediaFile mediaFile = new MediaFile(createPostRequest.File);
+                            mediaFile.GeneratePathFile();
+                            post.PathFile = mediaFile.FullPath;
+                            await SaveFile();
                         }
 
                         db.Post.Add(post);
@@ -213,7 +216,7 @@ namespace Parchegram.Service.Services.Implementations
             IImmutableList<PostResponse> postResponses = GetPostspaginate(sortedPostResponses, page);
             int totalRows = sortedPostResponses.Count();
             PostListPaginateResponse postListPaginateResponse = new PostListPaginateResponse(postResponses, totalRows);
-            
+
             return postListPaginateResponse;
         }
 
@@ -255,7 +258,7 @@ namespace Parchegram.Service.Services.Implementations
                                                                             QueryFollow = subTempFollow,
                                                                             QueryUserShare = subTempUserShare,
                                                                             QueryLike = subTempLike
-                                                                        }); 
+                                                                        });
                 return queryPostResponses;
             }
             catch (Exception e)
@@ -307,7 +310,13 @@ namespace Parchegram.Service.Services.Implementations
                 postResponse.Date = (post.QueryFollow != null) ? post.QueryPost.Date : post.QueryShare.Date;
 
                 if (post.QueryPost.PathFile != null)
-                    postResponse.File = await Image.GetFile(post.QueryPost.PathFile);
+                {
+                    if (post.QueryPost.IdTypePost.Equals(1))
+                        postResponse.File = await Image.GetFile(post.QueryPost.PathFile);
+                    else if (post.QueryPost.IdTypePost.Equals(2))
+                        postResponse.File = await Image.GetFile(post.QueryPost.PathFile);
+                }
+
 
                 // UserOwner
                 postResponse.IdUserOwner = post.QueryUserOwner.Id;
@@ -387,46 +396,6 @@ namespace Parchegram.Service.Services.Implementations
         private IImmutableList<PostResponse> GetPostspaginate(IOrderedEnumerable<PostResponse> sortedPostResponses, int page)
         {
             return sortedPostResponses.Skip((page - 1) * 3).Take(3).ToImmutableList();
-        }
-
-        /// <summary>
-        /// Obtiene path del archivo que llega por post
-        /// </summary>
-        /// <param name="file">Archivo que llega desde un formulario</param>
-        /// <returns>Ruta de donde se guardara el archivo</returns>
-        private string GetPathFile(IFormFile file)
-        {
-            try
-            {
-                string rootPath = @"C:\Media\Post";
-                string fileName = file.FileName;
-
-                return Path.Combine(rootPath, fileName);
-            }
-            catch (Exception e)
-            {
-                _logger.LogInformation(e.Message);
-                return string.Empty;
-            }
-        }
-
-        /// <summary>
-        /// Copia el archivo en la ruta especificada
-        /// </summary>
-        /// <param name="file">Archivo que llega desde un formulario</param>
-        private void SaveFile(IFormFile file)
-        {
-            try
-            {
-                using (var fs = File.Create(GetPathFile(file)))
-                {
-                    file.CopyTo(fs);
-                }
-            }
-            catch (Exception e)
-            {
-                _logger.LogInformation(e.Message);
-            }
         }
 
         /// <summary>

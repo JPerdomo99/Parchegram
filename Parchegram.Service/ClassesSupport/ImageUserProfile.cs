@@ -131,26 +131,26 @@ namespace Parchegram.Service.ClassesSupport
         /// <returns>Imagen de perfil de usuario en byte[]</returns>
         public async Task<byte[]> GetImageUser(int idUser, char size)
         {
-            using (var db = new ParchegramDBContext())
+            try
             {
-                try
+                using (var db = new ParchegramDBContext())
                 {
+                
                     UserImageProfile userImageProfile = await db.UserImageProfile.Where(u => u.IdUser.Equals(idUser)).FirstOrDefaultAsync();
                     if (userImageProfile != null)
                     {
                         if (size.Equals('M'))
-                            return await Image.GetFile(userImageProfile.PathImageS);
-                        else
                             return await Image.GetFile(userImageProfile.PathImageM);
+                        else
+                            return await Image.GetFile(userImageProfile.PathImageS);
                     }
-
                     return null;
                 }
-                catch (Exception e)
-                {
-                    _logger.LogInformation(e.Message);
-                    return null;
-                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation(e.Message);
+                return null;
             }
         }
     }

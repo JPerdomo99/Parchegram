@@ -39,7 +39,7 @@ namespace Parchegram.Service.ClassesSupport
         public static async Task<byte[]> GetFile(string fullPath)
         {
             byte[] result;
-            using (FileStream file = File.Open(fullPath, FileMode.Open))
+            using (FileStream file = MediaFile.Open(fullPath, FileMode.Open))
             {
                 result = new byte[file.Length];
                 await file.ReadAsync(result, 0, (int)file.Length);
