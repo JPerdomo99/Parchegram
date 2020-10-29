@@ -359,6 +359,49 @@ namespace Parchegram.Service.Services.Implementations
         }
 
         /// <summary>
+        /// Metodo que saca los datos de un usuario segun su id
+        /// </summary>
+        /// <param name="idUser">Id del usuario que se va a consultar</param>
+        /// <param name="nameUser">Nombre del usuario que pidio los datos</param>
+        /// <returns></returns>
+        public async Task<Response> GetUserById(int idUser, string nameUser)
+        {
+            Response response = new Response();
+            try
+            {
+                using (var db = new ParchegramDBContext())
+                {
+                    User userSession = await db.User.Where(u => u.NameUser.Equals(nameUser)).FirstOrDefaultAsync();
+                    if (userSession == null)
+                        return response.GetResponse("El usuario que pidio la consulta no existe", 0, null);
+                    User userById = await db.User.Where(u => u.Id.Equals(idUser)).FirstOrDefaultAsync();
+                    if (userById == null)
+                        return response.GetResponse("El usuario que desea consultar no existe", 0, null);
+
+                    UserByIdResponse userByIdResponse = await (from user in db.User
+                                                         where user.Id.Equals(idUser)
+                                                         select new UserByIdResponse
+                                                         {
+                                                             IdUser = user.Id,
+                                                             NameUser = user.NameUser,
+                                                             Email = user.Email,
+                                                             DateBirth = user.DateBirth
+                                                         }).FirstOrDefaultAsync();
+
+                    userByIdResponse.Follow = (await db.Follow.Where(f => f.IdUserFollower.Equals(userSession.Id) && f.IdUserFollowing.Equals(userById.Id)).FirstOrDefaultAsync() == null) ? false : true;
+                    ImageUserProfile imageUserProfile = new ImageUserProfile(false);
+                    userByIdResponse.ImageProfile = await imageUserProfile.GetImageUser(userById.Id, 'M');
+                    return response.GetResponse("Exito al obtener los datos del usuario", 1, userByIdResponse);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation(e.Message);
+                return response.GetResponse($"Ha ocurrido un error inesperado: {e.Message}", 0, null);
+            }
+        }
+
+        /// <summary>
         /// Crea el token segun el Usuario
         /// </summary>
         /// <param name="user">Usuario</param>

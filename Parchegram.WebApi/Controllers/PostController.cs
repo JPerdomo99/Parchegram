@@ -17,8 +17,8 @@ namespace Parchegram.WebApi.Controllers
         public PostController(IPostService postService,
             IWebHostEnvironment env)
         {
-            _postService = postService;
             _env = env;
+            _postService = postService;
         }
 
         [HttpGet("GetPosts/{nameUser}/{page?}")]

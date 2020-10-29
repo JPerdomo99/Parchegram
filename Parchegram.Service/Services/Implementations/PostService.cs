@@ -14,8 +14,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Xabe.FFmpeg;
-using ImageMagick;
 
 namespace Parchegram.Service.Services.Implementations
 {
@@ -68,20 +66,17 @@ namespace Parchegram.Service.Services.Implementations
                     User user = db.User.Where(u => u.NameUser == createPostRequest.NameUser).FirstOrDefault();
                     if (user != null)
                     {
-                        int idUser = await db.User.Where(u => u.NameUser == createPostRequest.NameUser).Select(u => u.Id).FirstOrDefaultAsync();
                         Post post = new Post();
                         post.Description = createPostRequest.Description;
-                        post.IdUser = idUser;
+                        post.IdUser = user.Id;
                         post.IdTypePost = DefineTypePost(createPostRequest.File);
                         post.Date = DateTime.Now;
                         if (createPostRequest.IdTypePost != 3)
                         {
-                            MediaFile mediaFile = new MediaFile(createPostRequest.File);
-                            mediaFile.GeneratePathFile();
-                            post.PathFile = mediaFile.FullPath;
-                            await SaveFile();
+                            FileStocker fileStocker = new FileStocker(createPostRequest.File);
+                            post.PathFile = fileStocker.FullPath;
+                            await fileStocker.SaveFile(); 
                         }
-
                         db.Post.Add(post);
                         db.SaveChanges();
                     }

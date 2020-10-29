@@ -26,7 +26,6 @@ namespace Parchegram.Model.Response.General
         public Response GetResponse(string message, int success, object data)
         {
             Response response = new Response(message, success, data);
-
             return response;
         }
     }

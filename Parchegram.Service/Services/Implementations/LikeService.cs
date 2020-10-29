@@ -45,7 +45,7 @@ namespace Parchegram.Service.Services.Implementations
                                 return response.GetResponse("El like se ha agregado correctamente", 1, true);
                             return response.GetResponse("El like no se puedo agregar corractamente", 0, false);
                         }
-                        return response.GetResponse("El like ya exite", 0, false);
+                        return response.GetResponse("El like ya existe", 0, false);
                     }
                     return response.GetResponse("El usuario no existe", 0, false);
                 }

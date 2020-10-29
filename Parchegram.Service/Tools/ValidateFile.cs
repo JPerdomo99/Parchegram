@@ -6,7 +6,7 @@ namespace Parchegram.Service.Tools
     public class ValidateFile
     {
         private static string[] ImageExtensions = { "image/jpeg", "image/jpg", "image/png", "image/x-icon", "image/svg+xml", "image/gif" };
-        private static string[] VideoExtensions = { "video/mp4", "video/x-ms-wmv", "video/3gpp", "video/avi" };
+        private static string[] VideoExtensions = { "video/mp4", "video/x-ms-wmv", "video/3gpp", "video/x-msvideo" };
 
         /// <summary>
         /// Valida la extensión de la imagen
@@ -37,7 +37,6 @@ namespace Parchegram.Service.Tools
             try
             {
                 string result = ImageExtensions.Concat(VideoExtensions).FirstOrDefault(e => e.Equals(extension));
-
                 return (result != null) ? true : false;
             }
             catch (Exception)

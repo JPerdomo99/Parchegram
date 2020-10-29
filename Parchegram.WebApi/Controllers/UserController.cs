@@ -86,7 +86,6 @@ namespace Parchegram.WebApi.Controllers
         public async Task<IActionResult> UserExists([FromBody] LoginRequest loginRequest)
         {
             Response result = await _userService.UserExists(loginRequest);
-
             return Ok(result);
         }
 
@@ -94,7 +93,6 @@ namespace Parchegram.WebApi.Controllers
         public async Task<IActionResult> EmailConfirmed([FromRoute] string nameUser)
         {
             Response result = await _userService.EmailConfirmed(nameUser);
-
             return Ok(result);
         }
 
@@ -102,7 +100,6 @@ namespace Parchegram.WebApi.Controllers
         public IActionResult NameUserUnique([FromRoute] string nameUser)
         {
             Response result = _userService.NameUserUnique(nameUser);
-
             return Ok(result);
         }
 
@@ -110,21 +107,25 @@ namespace Parchegram.WebApi.Controllers
         public IActionResult EmailUnique([FromRoute] string email)
         {
             Response result = _userService.EmailUnique(email);
-
             return Ok(result);
         }
 
         [HttpPost("UserConfig")]
         public async Task<IActionResult> UserConfig([FromForm] ConfigUserRequest configUserRequest)
         {
-            Response response = await _userService.UserConfig(configUserRequest);
+            Response result = await _userService.UserConfig(configUserRequest);
+            if (result.Success == 0)
+                return BadRequest(result);
+            result = await _userService.GetUserConfigResponse(configUserRequest);
 
-            if (response.Success == 0)
-                return BadRequest(response);
+            return Ok(result);
+        }
 
-            response = await _userService.GetUserConfigResponse(configUserRequest);
-
-            return Ok(response);
+        [HttpGet("GetById/{idUser}/{nameUser}")]
+        public async Task<IActionResult> GetById(int idUser, string nameUser)
+        {
+            Response result = await _userService.GetUserById(idUser, nameUser);
+            return Ok(result);
         }
 
         [HttpPost("ActionUpload")]
