@@ -14,7 +14,7 @@ namespace Parchegram.Service.Services.Interfaces
 
         public bool DeletePost(int id);
 
-        public Task<Response> GetPostList(string nameUser, int page);
+        public Task<Response> GetPostList(string nameUser, int page, int idTypePost);
 
         public Task<Response> GetPostById(int id);
     }

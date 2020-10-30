@@ -8,7 +8,7 @@ namespace Parchegram.Model.Response.Comment
     {
         public int IdComment { get; set; }
 
-        public int Iduser { get; set; }
+        public int IdUser { get; set; }
 
         public string NameUser { get; set; }
 

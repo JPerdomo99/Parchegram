@@ -53,7 +53,7 @@ namespace Parchegram.Service.Services.Implementations
                                                  select new PostCommentResponse
                                                  {
                                                      IdComment = comment.Id,
-                                                     Iduser = user.Id,
+                                                     IdUser = user.Id,
                                                      NameUser = user.NameUser,
                                                      CommentText = comment.CommentText,
                                                      Date = comment.Date
@@ -69,7 +69,7 @@ namespace Parchegram.Service.Services.Implementations
                                              select new PostCommentResponse
                                              {
                                                  IdComment = comment.Id,
-                                                    Iduser = user.Id,
+                                                    IdUser = user.Id,
                                                  NameUser = user.NameUser,
                                                  CommentText = comment.CommentText,
                                                  Date = comment.Date
