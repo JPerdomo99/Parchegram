@@ -28,6 +28,13 @@ namespace Parchegram.WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpGet("GetPosts/{idUser}/{page}/{idTypePost}/{nameUserSession}")]
+        public async Task<IActionResult> GetPostList([FromRoute] int idUser, [FromRoute] int idTypePost, [FromRoute] string nameUserSession, [FromRoute] int page = 1)
+        {
+            Response result = await _postService.GetPostList(idUser, page, idTypePost, nameUserSession);
+            return Ok(result);
+        }
+
         [HttpGet("GetPostById/{id}")]
         public async Task<IActionResult> GetPostById([FromRoute] int id)
         {

@@ -49,18 +49,18 @@ namespace ParchegramTest
         //    Assert.NotNull(post);
         //}
 
-        [Fact]
-        public async void GetPostList_NoNull()
-        {
-            Response response = await _postService.GetPostList("Julian9999");
-            Assert.NotNull(response.Data);
-        }
+        //[Fact]
+        //public async void GetPostList_NoNull()
+        //{
+        //    Response response = await _postService.GetPostList("Julian9999");
+        //    Assert.NotNull(response.Data);
+        //}
 
-        [Fact]
-        public async void GetPostList_Null()
-        {
-            Response response = await _postService.GetPostList("NoExists");
-            Assert.Null(response);
-        }
+        //[Fact]
+        //public async void GetPostList_Null()
+        //{
+        //    Response response = await _postService.GetPostList("NoExists");
+        //    Assert.Null(response);
+        //}
     }
 }

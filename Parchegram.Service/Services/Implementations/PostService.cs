@@ -144,6 +144,11 @@ namespace Parchegram.Service.Services.Implementations
             }
         }
 
+        /// <summary>
+        /// Obtenemos un post segun su id
+        /// </summary>
+        /// <param name="id">Id del post</param>
+        /// <returns>Post</returns>
         public async Task<Response> GetPostById(int id)
         {
             Response response = new Response();
@@ -154,8 +159,8 @@ namespace Parchegram.Service.Services.Implementations
                     Post post = await db.Post.Where(p => p.Id.Equals(id)).FirstOrDefaultAsync();
                     if (post == null)
                         return response.GetResponse("No existe el post", 0, null);
-                    PostListQueryResponse postListQueryResponse = await GetPostsQueryResponses(id, db);
-                    PostResponse postRensponse = await ProcessPosts(postListQueryResponse, true);
+                    PostListQueryResponse postListQueryResponse = await GetPostsQueryResponseById(id, db);
+                    PostResponse postRensponse = await ProcessPostById(postListQueryResponse);
 
                     return response.GetResponse($"Exito al traer el post", 1, postRensponse);
                 }
@@ -172,14 +177,15 @@ namespace Parchegram.Service.Services.Implementations
         /// Y los que los usuarios que siguen compartieron
         /// </summary>
         /// <param name="nameUser">Nombre del usuario</param>
+        /// <param name="page">Pagina que de la que vamos a consultar los post</param>
         /// <returns>Response con los posts cada uno con su numero de likes y comentarios limit(2)</returns>
         public async Task<Response> GetPostList(string nameUser, int page, int idTypePost)
         {
             Response response = new Response();
-            using (var db = new ParchegramDBContext())
-            {
-                try
+            try { 
+                using (var db = new ParchegramDBContext())
                 {
+                
                     User user = await db.User.Where(u => u.NameUser.Equals(nameUser)).FirstOrDefaultAsync();
                     if (user == null)
                         return response.GetResponse("No existe un usuario con ese nombre", 0, null);
@@ -187,12 +193,48 @@ namespace Parchegram.Service.Services.Implementations
                     PostListPaginateResponse postListPaginateResponse = await GetPostListPaginateResponse(user.Id, page, db, idTypePost);
 
                     return response.GetResponse("Exito al consultar los post", 1, postListPaginateResponse);
+                
+                
                 }
-                catch (Exception e)
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation(e.Message);
+                return response.GetResponse($"Ha ocurrido un error inesperado {e.Message}", 0, null);
+            }
+        }
+
+        /// <summary>
+        /// Devuelve un response con todos los post que ha subido o compartido segun su id
+        /// </summary>
+        /// <param name="idUser">Id del usuario del que vamos a consultar los post</param>
+        /// <param name="page">Pagina </param>
+        /// <param name="idTypePost"></param>
+        /// <param name="nameUserSession"></param>
+        /// <returns>Devuelve un response con todos los post que ha subido o compartido segun su id</returns>
+        public async Task<Response> GetPostList(int idUser, int page, int idTypePost, string nameUserSession)
+        {
+            Response response = new Response();
+            try
+            {
+                using (var db = new ParchegramDBContext())
                 {
-                    _logger.LogInformation(e.Message);
-                    return response.GetResponse($"Ha ocurrido un error inesperado {e.Message}", 0, null);
+                    User user = await db.User.Where(u => u.Id.Equals(idUser)).FirstOrDefaultAsync();
+                    if (user == null)
+                        return response.GetResponse("No existe un usuario con ese nombre", 0, null);
+                    User userSession = await db.User.Where(u => u.NameUser.Equals(nameUserSession)).FirstOrDefaultAsync();
+                    if (userSession == null)
+                        return response.GetResponse("No existe el usuario de la sesión", 0, null);
+
+                    PostListPaginateResponse postListPaginateResponse = await GetPostListPaginateResponse(user.Id, page, db, idTypePost, userSession.Id);
+
+                    return response.GetResponse("Exito al consultar los post", 1, postListPaginateResponse);
                 }
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation(e.Message);
+                return response.GetResponse($"Ha ocurrido un error inesperado {e.Message}", 0, null);
             }
         }
 
@@ -203,9 +245,13 @@ namespace Parchegram.Service.Services.Implementations
         /// <param name="idUser">Id del usuario</param>
         /// <param name="db">Contexto de la db</param>
         /// <returns>Collection de PostResponse</returns>
-        private async Task<PostListPaginateResponse> GetPostListPaginateResponse(int idUser, int page, ParchegramDBContext db, int idTypePost)
+        private async Task<PostListPaginateResponse> GetPostListPaginateResponse(int idUser, int page, ParchegramDBContext db, int idTypePost = 0, int idUserSession = 0)
         {
-            IQueryable<PostListQueryResponse> queryPostResponses = GetPostsQueryResponses(idUser, db, idTypePost);
+            IQueryable<PostListQueryResponse> queryPostResponses = null;
+            if (idUserSession != 0)
+                queryPostResponses = GetPostsQueryResponses(idUser, db, idTypePost, idUserSession);
+            else
+                queryPostResponses = GetPostsQueryResponses(idUser, db);
             ICollection<PostResponse> postResponsesCollection = await ProcessPosts(queryPostResponses);
             IOrderedEnumerable<PostResponse> sortedPostResponses = GetPostsOrder(postResponsesCollection);
             IImmutableList<PostResponse> postResponses = GetPostspaginate(sortedPostResponses, page);
@@ -216,11 +262,38 @@ namespace Parchegram.Service.Services.Implementations
         }
 
         /// <summary>
+        /// Obtiene un Post segun su Id devolviendo el Post, el usuario que la subio y si se ha dado like
+        /// </summary>
+        /// <param name="idPost">Id del post</param>
+        /// <param name="parchegramDBContext">Contexto de la base de datos</param>
+        /// <returns>El post junto con el usario que lo subio y si se ha dado like</returns>
+
+        private async Task<PostListQueryResponse> GetPostsQueryResponseById(int idPost, ParchegramDBContext parchegramDBContext)
+        {
+            PostListQueryResponse queryPostResponses = await (from tempPost in parchegramDBContext.Post
+
+                                                              join tempUserOwner in parchegramDBContext.User on tempPost.IdUser equals tempUserOwner.Id
+
+                                                              join tempLike in parchegramDBContext.Like on tempPost.Id equals tempLike.IdPost into leftTempLike
+                                                              from subTempLike in leftTempLike.DefaultIfEmpty()
+
+                                                              where tempPost.Id.Equals(idPost)
+
+                                                              select new PostListQueryResponse
+                                                              {
+                                                                  QueryPost = tempPost,
+                                                                  QueryUserOwner = tempUserOwner,
+                                                                  QueryLike = subTempLike
+                                                              }).FirstOrDefaultAsync();
+            return queryPostResponses;
+        }
+
+        /// <summary>
         /// Ejecuta consulta saca todos los post con uniones y restricciones y devuelve el resultado
         /// </summary>
         /// <param name="idUser">Id del usuario al cual le vamos a mostrar los posts</param>
         /// <returns>Devuelve la consulta que contiene los post que se devolveran al cliente correspondiente</returns>
-        private IQueryable<PostListQueryResponse> GetPostsQueryResponses(int idUser, ParchegramDBContext parchegramDBContext, int idTypePost)
+        private IQueryable<PostListQueryResponse> GetPostsQueryResponses(int idUser, ParchegramDBContext parchegramDBContext)
         {
             try
             {
@@ -249,14 +322,11 @@ namespace Parchegram.Service.Services.Implementations
                                                                         {
                                                                             QueryPost = tempPost,
                                                                             QueryUserOwner = tempUserOwner,
-                                                                            QueryShare = subTempShare,
+                                                                            QueryShare = subTempShare,  
                                                                             QueryFollow = subTempFollow,
                                                                             QueryUserShare = subTempUserShare,
                                                                             QueryLike = subTempLike
                                                                         });
-                if (idTypePost != 0)
-                    queryPostResponses = queryPostResponses.Where(q => q.QueryPost.IdTypePost.Equals(idTypePost));
-
                 return queryPostResponses;
             }
             catch (Exception e)
@@ -266,81 +336,52 @@ namespace Parchegram.Service.Services.Implementations
             }
         }
 
-        private async Task<PostListQueryResponse> GetPostsQueryResponses(int idPost, ParchegramDBContext parchegramDBContext)
+        /// <summary>
+        /// Obtiene la lista de los post que ha subido o ha compartido un usuario segun su id
+        /// </summary>
+        /// <param name="idUser">Id del usuario del que vamos a consultar los post</param>
+        /// <param name="parchegramDBContext">Contexto de la base de datos</param>
+        /// <param name="idTypePost">Si solo vamos a consultar por un tipo de post</param>
+        /// <param name="idUserSession">Id del usuario que esta en la sesión con la finalidad de consultar su id</param>
+        /// <returns>Devuelve la consulta que contiene los post que se devolveran al cliente correspondiente</returns>
+        private IQueryable<PostListQueryResponse> GetPostsQueryResponses(int idUser, ParchegramDBContext parchegramDBContext, int idTypePost, int idUserSession)
         {
-            PostListQueryResponse queryPostResponses = await (from tempPost in parchegramDBContext.Post
+            IQueryable<PostListQueryResponse> queryPostResponses = (from tempPost in parchegramDBContext.Post
 
-                                                              join tempUserOwner in parchegramDBContext.User on tempPost.IdUser equals tempUserOwner.Id
+                                                                    join tempUserOwner in parchegramDBContext.User on tempPost.IdUser equals tempUserOwner.Id into leftTempUserOwner
+                                                                    from subTempUserOwner in leftTempUserOwner.DefaultIfEmpty()
 
-                                                              join tempLike in parchegramDBContext.Like on tempPost.Id equals tempLike.IdPost into leftTempLike
-                                                              from subTempLike in leftTempLike.DefaultIfEmpty()
+                                                                    join tempShare in parchegramDBContext.Share on tempPost.Id equals tempShare.IdPost into leftTempShare
+                                                                    from subTempShare in leftTempShare.DefaultIfEmpty()
 
-                                                              where tempPost.Id.Equals(idPost)
+                                                                    join tempUserShare in parchegramDBContext.User on subTempShare.IdUser equals tempUserShare.Id into leftTempUserShare
+                                                                    from subTempUserShare in leftTempUserShare.DefaultIfEmpty()
 
-                                                              select new PostListQueryResponse
-                                                              {
-                                                                  QueryPost = tempPost,
-                                                                  QueryUserOwner = tempUserOwner,
-                                                                  QueryLike = subTempLike
-                                                              }).FirstOrDefaultAsync();
+                                                                    join tempLike in parchegramDBContext.Like on tempPost.Id equals tempLike.IdPost into leftTempLike
+                                                                    from subTempLike in leftTempLike.DefaultIfEmpty()
+
+                                                                    where tempPost.IdUser.Equals(idUser) || subTempUserShare.Id.Equals(idUser) || subTempLike.IdUser.Equals(idUserSession)
+
+                                                                    select new PostListQueryResponse
+                                                                    {
+                                                                        QueryPost = tempPost,
+                                                                        QueryUserOwner = subTempUserOwner,
+                                                                        QueryShare = subTempShare,
+                                                                        QueryUserShare = subTempUserShare,
+                                                                        QueryLike = subTempLike
+                                                                    });
+            if (idTypePost != 0)
+                queryPostResponses = queryPostResponses.Where(q => q.QueryPost.IdTypePost.Equals(idTypePost));
             return queryPostResponses;
         }
 
         /// <summary>
-        /// Recorre la consulta asignando fecha subido/compartido, comentarios y numero de likes
+        /// Se procesa un solo post
         /// </summary>
-        /// <param name="postListQueryResponses">Query para recorrer</param>
-        /// <returns>Colección </returns>
-        private async Task<ICollection<PostResponse>> ProcessPosts(IQueryable<PostListQueryResponse> postListQueryResponses)
-        {
-            ICollection<PostResponse> postResponses = new List<PostResponse>();
-            ImageUserProfile imageUserProfile = new ImageUserProfile(false);
-            ILikeService likeService = new LikeService();
-            foreach (var post in postListQueryResponses)
-            {
-                PostResponse postResponse = new PostResponse();
-
-                // Post
-                postResponse.IdPost = post.QueryPost.Id;
-                postResponse.IdTypePost = post.QueryPost.IdTypePost;
-                postResponse.Description = post.QueryPost.Description;
-                // El post fue compartido entonces asignamos la fecha del share
-                postResponse.Date = (post.QueryFollow != null) ? post.QueryPost.Date : post.QueryShare.Date;
-
-                if (post.QueryPost.PathFile != null)
-                {
-                    if (post.QueryPost.IdTypePost.Equals(1))
-                        postResponse.File = await Image.GetFile(post.QueryPost.PathFile);
-                    else if (post.QueryPost.IdTypePost.Equals(2))
-                        postResponse.File = await Image.GetFile(post.QueryPost.PathFile);
-                }
-
-
-                // UserOwner
-                postResponse.IdUserOwner = post.QueryUserOwner.Id;
-                postResponse.NameUserOwner = post.QueryUserOwner.NameUser;
-                postResponse.ImageProfileUserOwner = await imageUserProfile.GetImageUser(post.QueryUserOwner.Id, 'S');
-
-                // UserShare
-                if (post.QueryShare != null)
-                {
-                    postResponse.IdUserShare = post.QueryUserShare.Id;
-                    postResponse.NameUserShare = post.QueryUserShare.NameUser;
-                    postResponse.ImageProfileUserShare = await imageUserProfile.GetImageUser(post.QueryUserShare.Id, 'S');
-                    postResponse.DateShare = post.QueryShare.Date;
-                }
-
-                postResponse.LikeUser = (post.QueryLike != null) ? true : false;
-
-                // Numero de likes de la publicación
-                postResponse.NumberLikes = likeService.GetNumLikes(post.QueryPost.Id);
-
-                postResponses.Add(postResponse);
-            }
-            return postResponses;
-        }
-
-        private async Task<PostResponse> ProcessPosts(PostListQueryResponse postListQueryResponse, bool byId)
+        /// <param name="postListQueryResponse">En este caso ya devolvemos el post ya que se ejecuta la consulta</param>
+        /// <param name="byId">Id del post que quereoms consultar</param>
+        /// <returns></returns>
+        private async Task<PostResponse> ProcessPostById(PostListQueryResponse postListQueryResponse)
         {
             try
             {
@@ -376,6 +417,62 @@ namespace Parchegram.Service.Services.Implementations
         }
 
         /// <summary>
+        /// Recorre la consulta asignando fecha subido/compartido, comentarios y numero de likes
+        /// </summary>
+        /// <param name="postListQueryResponses">Query para recorrer</param>
+        /// <returns>Colección tipo PostResponse</returns>
+        private async Task<ICollection<PostResponse>> ProcessPosts(IQueryable<PostListQueryResponse> postListQueryResponses)
+        {
+            ICollection<PostResponse> postResponses = new List<PostResponse>();
+            ImageUserProfile imageUserProfile = new ImageUserProfile(false);
+            ILikeService likeService = new LikeService();
+            foreach (var post in postListQueryResponses)
+            {
+                PostResponse postResponse = new PostResponse();
+
+                // Post
+                postResponse.IdPost = post.QueryPost.Id;
+                postResponse.IdTypePost = post.QueryPost.IdTypePost;
+                postResponse.Description = post.QueryPost.Description;
+
+                // El post fue compartido entonces asignamos la fecha del share
+                // Eso en caso de que consultemos los follows, este caso se presenta
+                // cuando se consultas los post desde la pagina Home
+                postResponse.Date = (post.QueryFollow != null) ? post.QueryPost.Date : ((post.QueryShare != null) ? post.QueryShare.Date : post.QueryPost.Date);
+
+                if (post.QueryPost.PathFile != null)
+                {
+                    if (post.QueryPost.IdTypePost.Equals(1))
+                        postResponse.File = await Image.GetFile(post.QueryPost.PathFile);
+                    else if (post.QueryPost.IdTypePost.Equals(2))
+                        postResponse.File = await Image.GetFile(post.QueryPost.PathFile);
+                }
+
+                // UserOwner
+                postResponse.IdUserOwner = post.QueryUserOwner.Id;
+                postResponse.NameUserOwner = post.QueryUserOwner.NameUser;
+                postResponse.ImageProfileUserOwner = await imageUserProfile.GetImageUser(post.QueryUserOwner.Id, 'S');
+
+                // UserShare
+                if (post.QueryShare != null)
+                {
+                    postResponse.IdUserShare = post.QueryUserShare.Id;
+                    postResponse.NameUserShare = post.QueryUserShare.NameUser;
+                    postResponse.ImageProfileUserShare = await imageUserProfile.GetImageUser(post.QueryUserShare.Id, 'S');
+                    postResponse.DateShare = post.QueryShare.Date;
+                }
+
+                postResponse.LikeUser = (post.QueryLike != null) ? true : false;
+
+                // Numero de likes de la publicación
+                postResponse.NumberLikes = likeService.GetNumLikes(post.QueryPost.Id);
+
+                postResponses.Add(postResponse);
+            }
+            return postResponses;
+        }
+
+        /// <summary>
         /// Ordena la colección de post por fecha de forma desendente
         /// </summary>
         /// <param name="postResponsesCollection">Colección de post</param>
@@ -393,7 +490,7 @@ namespace Parchegram.Service.Services.Implementations
         /// <returns>Lista inmutable de PostResponse</returns>
         private IImmutableList<PostResponse> GetPostspaginate(IOrderedEnumerable<PostResponse> sortedPostResponses, int page)
         {
-            return sortedPostResponses.Skip((page - 1) * 3).Take(3).ToImmutableList();
+            return sortedPostResponses.Skip((page - 1) * 2).Take(3).ToImmutableList();
         }
 
         /// <summary>
