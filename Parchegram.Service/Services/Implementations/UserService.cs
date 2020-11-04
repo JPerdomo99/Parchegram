@@ -364,22 +364,22 @@ namespace Parchegram.Service.Services.Implementations
         /// <param name="idUser">Id del usuario que se va a consultar</param>
         /// <param name="nameUser">Nombre del usuario que pidio los datos</param>
         /// <returns></returns>
-        public async Task<Response> GetUserById(int idUser, string nameUser)
+        public async Task<Response> GetUserByNameUser(string nameUser, string nameUserSession)
         {
             Response response = new Response();
             try
             {
                 using (var db = new ParchegramDBContext())
                 {
-                    User userSession = await db.User.Where(u => u.NameUser.Equals(nameUser)).FirstOrDefaultAsync();
+                    User userSession = await db.User.Where(u => u.NameUser.Equals(nameUserSession)).FirstOrDefaultAsync();
                     if (userSession == null)
                         return response.GetResponse("El usuario que pidio la consulta no existe", 0, null);
-                    User userById = await db.User.Where(u => u.Id.Equals(idUser)).FirstOrDefaultAsync();
+                    User userById = await db.User.Where(u => u.NameUser.Equals(nameUser)).FirstOrDefaultAsync();
                     if (userById == null)
                         return response.GetResponse("El usuario que desea consultar no existe", 0, null);
 
                     UserByIdResponse userByIdResponse = await (from user in db.User
-                                                         where user.Id.Equals(idUser)
+                                                         where user.NameUser.Equals(nameUser)
                                                          select new UserByIdResponse
                                                          {
                                                              IdUser = user.Id,

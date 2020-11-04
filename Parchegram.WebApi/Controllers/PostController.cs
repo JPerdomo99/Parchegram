@@ -21,17 +21,17 @@ namespace Parchegram.WebApi.Controllers
             _postService = postService;
         }
 
-        [HttpGet("GetPosts/{nameUser}/{page}/{idTypePost?}")]
-        public async Task<IActionResult> GetPostList([FromRoute] string nameUser, [FromRoute] int page = 1, [FromRoute] int idTypePost = 0)
+        [HttpGet("GetPosts/{nameUser}/{page}")]
+        public async Task<IActionResult> GetPostList([FromRoute] string nameUser, [FromRoute] int page = 1)
         {
-            Response result = await _postService.GetPostList(nameUser, page, idTypePost);
+            Response result = await _postService.GetPostList(nameUser, page);
             return Ok(result);
         }
 
-        [HttpGet("GetPosts/{idUser}/{page}/{idTypePost}/{nameUserSession}")]
-        public async Task<IActionResult> GetPostList([FromRoute] int idUser, [FromRoute] int idTypePost, [FromRoute] string nameUserSession, [FromRoute] int page = 1)
+        [HttpGet("GetPosts/{nameUser}/{page}/{idTypePost}/{nameUserSession}")]
+        public async Task<IActionResult> GetPostList([FromRoute] string nameUser, [FromRoute] int idTypePost, [FromRoute] string nameUserSession, [FromRoute] int page = 1)
         {
-            Response result = await _postService.GetPostList(idUser, page, idTypePost, nameUserSession);
+            Response result = await _postService.GetPostList(nameUser, page, idTypePost, nameUserSession);
             return Ok(result);
         }
 

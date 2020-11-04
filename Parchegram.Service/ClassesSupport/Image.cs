@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +25,6 @@ namespace Parchegram.Service.ClassesSupport
                     formFile.CopyTo(ms);
                     fileBytes = ms.ToArray();
                     string s = Convert.ToBase64String(fileBytes);
-                    // act on the Base64 data
                 }
             }
 
@@ -38,14 +38,20 @@ namespace Parchegram.Service.ClassesSupport
         /// <returns>Archivo en byte[]</returns>
         public static async Task<byte[]> GetFile(string fullPath)
         {
-            byte[] result;
-            using (FileStream file = File.Open(fullPath, FileMode.Open))
+            try
             {
-                result = new byte[file.Length];
-                await file.ReadAsync(result, 0, (int)file.Length);
+                byte[] result;
+                using (FileStream file = File.Open(fullPath, FileMode.Open))
+                {
+                    result = new byte[file.Length];
+                    await file.ReadAsync(result, 0, (int)file.Length);
+                }
+                return result;
             }
-
-            return result;
+            catch
+            {
+                return null;
+            }
         }
     }
 }

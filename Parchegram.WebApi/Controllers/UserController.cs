@@ -121,10 +121,10 @@ namespace Parchegram.WebApi.Controllers
             return Ok(result);
         }
 
-        [HttpGet("GetById/{idUser}/{nameUser}")]
-        public async Task<IActionResult> GetById(int idUser, string nameUser)
+        [HttpGet("GetByNameUser/{nameUser}/{nameUserSession}")]
+        public async Task<IActionResult> GetByNameUser(string nameUser, string nameUserSession)
         {
-            Response result = await _userService.GetUserById(idUser, nameUser);
+            Response result = await _userService.GetUserByNameUser(nameUser, nameUserSession);
             return Ok(result);
         }
 

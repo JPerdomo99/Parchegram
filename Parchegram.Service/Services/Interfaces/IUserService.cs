@@ -28,6 +28,6 @@ namespace Parchegram.Service.Services.Interfaces
 
         public Task<Response> GetUserConfigResponse(ConfigUserRequest configUserRequest);
 
-        public Task<Response> GetUserById(int idUser, string nameUser);
+        public Task<Response> GetUserByNameUser(string nameUser, string nameUserSession);
     }
 }

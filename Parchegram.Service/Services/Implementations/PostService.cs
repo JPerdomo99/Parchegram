@@ -19,17 +19,6 @@ namespace Parchegram.Service.Services.Implementations
 {
     public class PostService : IPostService
     {
-        public struct Paginate
-        {
-            public int totalRecords, recordsPerPage;
-
-            public Paginate(int totalRecords, int recordsPerPage)
-            {
-                this.totalRecords = totalRecords;
-                this.recordsPerPage = recordsPerPage;
-            }
-        }
-
         private readonly ILogger _logger;
 
         public PostService()
@@ -179,22 +168,19 @@ namespace Parchegram.Service.Services.Implementations
         /// <param name="nameUser">Nombre del usuario</param>
         /// <param name="page">Pagina que de la que vamos a consultar los post</param>
         /// <returns>Response con los posts cada uno con su numero de likes y comentarios limit(2)</returns>
-        public async Task<Response> GetPostList(string nameUser, int page, int idTypePost)
+        public async Task<Response> GetPostList(string nameUser, int page)
         {
             Response response = new Response();
             try { 
                 using (var db = new ParchegramDBContext())
                 {
-                
                     User user = await db.User.Where(u => u.NameUser.Equals(nameUser)).FirstOrDefaultAsync();
                     if (user == null)
                         return response.GetResponse("No existe un usuario con ese nombre", 0, null);
 
-                    PostListPaginateResponse postListPaginateResponse = await GetPostListPaginateResponse(user.Id, page, db, idTypePost);
+                    PostListPaginateResponse postListPaginateResponse = await GetPostListPaginateResponse(user.Id, page, db);
 
                     return response.GetResponse("Exito al consultar los post", 1, postListPaginateResponse);
-                
-                
                 }
             }
             catch (Exception e)
@@ -212,14 +198,14 @@ namespace Parchegram.Service.Services.Implementations
         /// <param name="idTypePost"></param>
         /// <param name="nameUserSession"></param>
         /// <returns>Devuelve un response con todos los post que ha subido o compartido segun su id</returns>
-        public async Task<Response> GetPostList(int idUser, int page, int idTypePost, string nameUserSession)
+        public async Task<Response> GetPostList(string nameUser, int page, int idTypePost, string nameUserSession)
         {
             Response response = new Response();
             try
             {
                 using (var db = new ParchegramDBContext())
                 {
-                    User user = await db.User.Where(u => u.Id.Equals(idUser)).FirstOrDefaultAsync();
+                    User user = await db.User.Where(u => u.NameUser.Equals(nameUser)).FirstOrDefaultAsync();
                     if (user == null)
                         return response.GetResponse("No existe un usuario con ese nombre", 0, null);
                     User userSession = await db.User.Where(u => u.NameUser.Equals(nameUserSession)).FirstOrDefaultAsync();
@@ -267,7 +253,6 @@ namespace Parchegram.Service.Services.Implementations
         /// <param name="idPost">Id del post</param>
         /// <param name="parchegramDBContext">Contexto de la base de datos</param>
         /// <returns>El post junto con el usario que lo subio y si se ha dado like</returns>
-
         private async Task<PostListQueryResponse> GetPostsQueryResponseById(int idPost, ParchegramDBContext parchegramDBContext)
         {
             PostListQueryResponse queryPostResponses = await (from tempPost in parchegramDBContext.Post
@@ -314,7 +299,7 @@ namespace Parchegram.Service.Services.Implementations
                                                                        from subTempLike in leftTempLike.DefaultIfEmpty()
 
                                                                         // Si el que compartio el post es seguido por el usuario 1
-                                                                        where subTempFollow.IdUserFollower.Equals(1) ||
+                                                                        where subTempFollow.IdUserFollower.Equals(idUser) ||
                                                                         parchegramDBContext.Follow.Any(f => f.IdUserFollower.Equals(idUser) && f.IdUserFollowing.Equals(subTempShare.IdUser)) ||
                                                                         subTempLike.IdUser.Equals(idUser)
 
@@ -490,7 +475,7 @@ namespace Parchegram.Service.Services.Implementations
         /// <returns>Lista inmutable de PostResponse</returns>
         private IImmutableList<PostResponse> GetPostspaginate(IOrderedEnumerable<PostResponse> sortedPostResponses, int page)
         {
-            return sortedPostResponses.Skip((page - 1) * 2).Take(3).ToImmutableList();
+            return sortedPostResponses.Skip((page - 1) * 3).Take(3).ToImmutableList();
         }
 
         /// <summary>
