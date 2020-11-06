@@ -1,13 +1,14 @@
-﻿using Parchegram.Model.Request.Follow;
+﻿using Parchegram.Model.Response.General;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Parchegram.Service.Services.Interfaces
 {
-    interface IFollowService
+    public interface IFollowService
     {
-        public bool AddFollow(FollowRequest followRequest);
-        public bool RemoveFollow(FollowRequest followRequest); 
+        public Task<Response> Add(string nameUserFollower, int idUserFollowing);
+        public Task<Response> Delete(string nameUserFollower, int idUserFollowing); 
     }
 }

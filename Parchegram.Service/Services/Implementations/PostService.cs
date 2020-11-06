@@ -342,10 +342,10 @@ namespace Parchegram.Service.Services.Implementations
                                                                     join tempUserShare in parchegramDBContext.User on subTempShare.IdUser equals tempUserShare.Id into leftTempUserShare
                                                                     from subTempUserShare in leftTempUserShare.DefaultIfEmpty()
 
-                                                                    join tempLike in parchegramDBContext.Like on tempPost.Id equals tempLike.IdPost into leftTempLike
+                                                                    join tempLike in parchegramDBContext.Like.Where(l => l.IdUser.Equals(idUserSession)) on tempPost.Id equals tempLike.IdPost into leftTempLike
                                                                     from subTempLike in leftTempLike.DefaultIfEmpty()
 
-                                                                    where tempPost.IdUser.Equals(idUser) || subTempUserShare.Id.Equals(idUser) || subTempLike.IdUser.Equals(idUserSession)
+                                                                    where tempPost.IdUser.Equals(idUser) || subTempUserShare.Id.Equals(idUser)
 
                                                                     select new PostListQueryResponse
                                                                     {

@@ -379,16 +379,16 @@ namespace Parchegram.Service.Services.Implementations
                         return response.GetResponse("El usuario que desea consultar no existe", 0, null);
 
                     UserByIdResponse userByIdResponse = await (from user in db.User
-                                                         where user.NameUser.Equals(nameUser)
-                                                         select new UserByIdResponse
-                                                         {
-                                                             IdUser = user.Id,
-                                                             NameUser = user.NameUser,
-                                                             Email = user.Email,
-                                                             DateBirth = user.DateBirth
-                                                         }).FirstOrDefaultAsync();
+                                                        where user.NameUser.Equals(nameUser)
+                                                        select new UserByIdResponse
+                                                        {
+                                                            IdUser = user.Id,
+                                                            NameUser = user.NameUser,
+                                                            Email = user.Email,
+                                                            DateBirth = user.DateBirth
+                                                        }).FirstOrDefaultAsync();
 
-                    userByIdResponse.Follow = (await db.Follow.Where(f => f.IdUserFollower.Equals(userSession.Id) && f.IdUserFollowing.Equals(userById.Id)).FirstOrDefaultAsync() == null) ? false : true;
+                    userByIdResponse.Follow = await db.Follow.Where(f => f.IdUserFollower.Equals(userSession.Id) && f.IdUserFollowing.Equals(userById.Id)).AnyAsync();
                     ImageUserProfile imageUserProfile = new ImageUserProfile(false);
                     userByIdResponse.ImageProfile = await imageUserProfile.GetImageUser(userById.Id, 'M');
                     return response.GetResponse("Exito al obtener los datos del usuario", 1, userByIdResponse);
@@ -397,7 +397,7 @@ namespace Parchegram.Service.Services.Implementations
             catch (Exception e)
             {
                 _logger.LogInformation(e.Message);
-                return response.GetResponse($"Ha ocurrido un error inesperado: {e.Message}", 0, null);
+                return response.GetResponse($"Ha ocurrido un error inesperado al intentar obtener el usuario por Nombre de usuario {e.Message}", 0, null);
             }
         }
 
