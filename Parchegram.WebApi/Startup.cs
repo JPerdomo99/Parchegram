@@ -8,7 +8,10 @@ using Microsoft.IdentityModel.Tokens;
 using Parchegram.Model.Common;
 using Parchegram.Service.Services.Implementations;
 using Parchegram.Service.Services.Interfaces;
+using Parchegram.WebApi.Hubs;
+//using Parchegram.WebApi.Hubs;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Parchegram.WebApi
 {
@@ -36,6 +39,7 @@ namespace Parchegram.WebApi
                                       builder.WithOrigins("http://localhost:8080",
                                           "http://127.0.0.1:5500")
                                       .AllowAnyHeader()
+                                      .AllowCredentials()
                                       .AllowAnyMethod();
                                   });
             });
@@ -65,6 +69,19 @@ namespace Parchegram.WebApi
                     ValidateIssuer = false,
                     ValidateAudience = false
                 };
+                d.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accesToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accesToken) && path.StartsWithSegments("/chathub"))
+                        {
+                            context.Token = accesToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
             #endregion
 
@@ -75,6 +92,9 @@ namespace Parchegram.WebApi
             services.AddScoped<ILikeService, LikeService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IFollowService, FollowService>();
+
+            // Services SinalR
+            services.AddSignalR();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -99,6 +119,7 @@ namespace Parchegram.WebApi
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<ChatHub>("/chathub");
             });
         }
     }

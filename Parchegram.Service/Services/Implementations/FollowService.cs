@@ -56,7 +56,7 @@ namespace Parchegram.Service.Services.Implementations
             catch (Exception e)
             {
                 _logger.LogInformation(e.Message);
-                return response.GetResponse($"Ha ocurrido un error inesperado al momento de crear el follow {e.Message}", 1, true);
+                return response.GetResponse($"Ha ocurrido un error inesperado al momento de crear el follow {e.Message}", 0, true);
             }
         }
 
@@ -93,7 +93,7 @@ namespace Parchegram.Service.Services.Implementations
             catch (Exception e)
             {
                 _logger.LogInformation(e.Message);
-                return response.GetResponse($"Ha ocurrido un error inesperado al momento de eliminar el follow {e.Message}", 1, true);
+                return response.GetResponse($"Ha ocurrido un error inesperado al momento de eliminar el follow {e.Message}", 0, true);
             }
         }
 

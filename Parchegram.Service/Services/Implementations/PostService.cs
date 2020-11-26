@@ -291,14 +291,14 @@ namespace Parchegram.Service.Services.Implementations
 
                                                                        join tempFollow in parchegramDBContext.Follow on tempPost.IdUser equals tempFollow.IdUserFollowing into leftTempFollow
                                                                        from subTempFollow in leftTempFollow.DefaultIfEmpty()
-
+                                                                        
                                                                        join tempUserShare in parchegramDBContext.User on subTempShare.IdUser equals tempUserShare.Id into leftTempUserShare
                                                                        from subTempUserShare in leftTempUserShare.DefaultIfEmpty()
 
                                                                        join tempLike in parchegramDBContext.Like on tempPost.Id equals tempLike.IdPost into leftTempLike
                                                                        from subTempLike in leftTempLike.DefaultIfEmpty()
 
-                                                                        // Si el que compartio el post es seguido por el usuario 1
+                                                                        // Si el que compartio el post es seguido por el usuario con el idUser
                                                                         where subTempFollow.IdUserFollower.Equals(idUser) ||
                                                                         parchegramDBContext.Follow.Any(f => f.IdUserFollower.Equals(idUser) && f.IdUserFollowing.Equals(subTempShare.IdUser)) ||
                                                                         subTempLike.IdUser.Equals(idUser)
