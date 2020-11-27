@@ -7,32 +7,36 @@ namespace Parchegram.WebApi
 {
     public class ChatGroup
     {
-        private ChatClient _chatClientSender;
+        private ChatClient _client1;
 
-        private ChatClient _chatClientReceiver;
+        private ChatClient _client2;
 
-        public ChatGroup(ChatClient chatClientSender, 
-            ChatClient chatClientReceiver)
+        public ChatGroup()
         {
-            _chatClientSender = chatClientSender;
-            _chatClientReceiver = chatClientReceiver;
         }
 
-        public ChatClient ChatClientSender
+        public ChatGroup(ChatClient client1, 
+            ChatClient client2)
         {
-            get { return _chatClientSender; }
-            set { _chatClientSender = value; }
+            _client1 = client1;
+            _client2 = client2;
         }
 
-        public ChatClient ChatClientReceiver
+        public ChatClient Client1
         {
-            get { return _chatClientReceiver; }
-            set { _chatClientReceiver = value; }
+            get { return _client1; }
+            set { _client1 = value; }
+        }
+
+        public ChatClient Client2
+        {
+            get { return _client2; }
+            set { _client2 = value; }
         }
 
         public string GroupName
         {
-            get { return _chatClientSender.NameUser + _chatClientReceiver.NameUser; }
+            get { return _client1.NameUser + _client2.NameUser; }
         }
     }
 }

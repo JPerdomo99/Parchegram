@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -21,46 +22,56 @@ namespace Parchegram.WebApi.Hubs
                 AddClient(Context.ConnectionId, nameUser);
         }
 
-        private async Task AddToGroup(string nameUserSender, string nameUserReceiver) 
+        // Send message to group with GroupName = client1Name + client2Name or client2Name + client1Name
+        public async Task SendMessage(string client1Name, string client2Name, string message)
         {
-            // Not exists group between Sender and Receiver
-            if (_chatGroups.Where(cg => cg.GroupName.Equals(nameUserSender.Concat(nameUserReceiver))).Any() == false)
+            ChatGroup chatGroup = GetChatGroup(client1Name, client2Name);
+            await Clients.Group(chatGroup.GroupName).SendAsync("ReceiveMessage", client1Name, message);
+        }
+
+        public async Task AddToGroup(string client1Name, string client2Name)
+        {
+            // Find chatGroup with groupName client1Name + client2Name or client2Name + client1Name
+            ChatGroup chatGroup = GetChatGroup(client1Name, client2Name);
+            if (chatGroup == null)
             {
-                ChatClient chatClientSender = _chatClients.Where(cc => cc.NameUser.Equals(nameUserSender)).FirstOrDefault();
-                ChatClient chatClientReceiver = null;
-                ChatGroup chatGroup = null;
-                string chatGroupName = nameUserSender.Concat(nameUserReceiver).ToString();
+                chatGroup = new ChatGroup();
+                string groupName = CreateGroupName(client1Name, client2Name);
 
-                // In case UserReceiver is not in chatClients
-                if (_chatClients.Where(cc => cc.NameUser.Equals(nameUserReceiver)).Any() == false)
+                // Agg client1 to group
+                // Se supone que el cliente ya existe
+                if (ChatClientExists(client1Name))
                 {
-                    chatClientReceiver = new ChatClient(string.Empty, nameUserReceiver);
-                    chatGroup = new ChatGroup(chatClientSender, chatClientReceiver);
-                    _chatGroups.Add(chatGroup);
-
-                    await Groups.AddToGroupAsync(chatClientSender.ConnectionId, chatGroupName);
+                    await Groups.AddToGroupAsync(GetConnectionId(client1Name), groupName);
+                    chatGroup.Client1 = GetClient(client1Name);
+                }
+                                        
+                // Agg client2 to group
+                // Se supone que este es el recibidor
+                if (ChatClientExists(client2Name))
+                {
+                    await Groups.AddToGroupAsync(GetConnectionId(client2Name), groupName);
+                    chatGroup.Client2 = GetClient(client2Name);
                 } else
                 {
-                    chatClientReceiver = _chatClients.Where(cc => cc.NameUser.Equals(nameUserReceiver)).FirstOrDefault();
-                    chatGroup = new ChatGroup(chatClientSender, chatClientReceiver);
-                    _chatGroups.Add(chatGroup);
-
-                    await Groups.AddToGroupAsync(chatClientSender.ConnectionId, chatGroupName);
-                    await Groups.AddToGroupAsync(chatClientReceiver.ConnectionId, chatGroupName);
+                    chatGroup.Client2 = new ChatClient(string.Empty, client2Name);
+                    _chatClients.Add(chatGroup.Client2);
                 }
+
+                // Add chatGroup
+                _chatGroups.Add(chatGroup);
             }
         }
 
-        private string GetGroupName(string nameUserSender, string nameUserReceiver)
+        private ChatGroup GetChatGroup(string client1Name, string client2Name)
         {
-            return _chatGroups.Where(cg => cg.GroupName.Equals(nameUserSender.Concat(nameUserReceiver))).Select(cg => cg.GroupName).FirstOrDefault();
+            return _chatGroups.Where(cg => cg.GroupName.Equals(string.Concat(client1Name, client2Name)) 
+                    || cg.GroupName.Equals(string.Concat(client2Name, client1Name))).FirstOrDefault();
         }
 
-        public async Task SendMessage(string nameUserSender, string nameUserReceiver, string message)
+        private string CreateGroupName(string clientName, string clientName2)
         {
-            //await Clients.Client(GetConnectionIdReceiver(nameUserReceiver)).SendAsync("ReceiveMessage", nameUserSender, message);
-            await Clients.Group(_chatGroups.Where(cg => cg.GroupName.Equals(nameUserSender.Concat(nameUserReceiver)))
-                .Select(cg => cg.GroupName).FirstOrDefault()).SendAsync("ReceiveMessage", message);
+            return string.Concat(clientName, clientName2);
         }
 
         private void AddClient(string idConnection, string nameUser)
@@ -80,9 +91,14 @@ namespace Parchegram.WebApi.Hubs
                 chatClient.ConnectionId = idConnection;
         }
 
-        private string GetConnectionIdReceiver(string nameUserReceiver)
+        private string GetConnectionId(string clientName)
         {
-            return _chatClients.Where(c => c.NameUser.Equals(nameUserReceiver)).Select(c => c.ConnectionId).FirstOrDefault();
+            return _chatClients.Where(c => c.NameUser.Equals(clientName)).Select(c => c.ConnectionId).FirstOrDefault();
+        }
+
+        private ChatClient GetClient(string clientName)
+        {
+            return _chatClients.Where(cc => cc.NameUser.Equals(clientName)).FirstOrDefault();
         }
     }
 }
