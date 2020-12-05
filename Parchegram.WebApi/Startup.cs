@@ -73,7 +73,7 @@ namespace Parchegram.WebApi
                 {
                     OnMessageReceived = context =>
                     {
-                        var accesToken = context.Request.Query["access_token"];
+                        var accesToken = context.Request.Query["authorization"];
                         var path = context.HttpContext.Request.Path;
                         if (!string.IsNullOrEmpty(accesToken) && path.StartsWithSegments("/chathub"))
                         {
@@ -92,6 +92,7 @@ namespace Parchegram.WebApi
             services.AddScoped<ILikeService, LikeService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IFollowService, FollowService>();
+            services.AddScoped<IMessageService, MessageService>();
 
             // Services SinalR
             services.AddSignalR();

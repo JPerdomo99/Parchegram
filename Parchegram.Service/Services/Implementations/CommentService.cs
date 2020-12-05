@@ -34,9 +34,9 @@ namespace Parchegram.Service.Services.Implementations
         public async Task<Response> GetCommentsByPost(int idPost, int limit = 0)
         {
             Response response = new Response();
-            using (var db = new ParchegramDBContext())
+            try
             {
-                try
+                using (var db = new ParchegramDBContext())
                 {
                     Post post = await db.Post.Where(p => p.Id.Equals(idPost)).FirstOrDefaultAsync();
                     if (post == null)
@@ -69,7 +69,7 @@ namespace Parchegram.Service.Services.Implementations
                                              select new PostCommentResponse
                                              {
                                                  IdComment = comment.Id,
-                                                    IdUser = user.Id,
+                                                 IdUser = user.Id,
                                                  NameUser = user.NameUser,
                                                  CommentText = comment.CommentText,
                                                  Date = comment.Date
@@ -77,11 +77,11 @@ namespace Parchegram.Service.Services.Implementations
 
                     return response.GetResponse("Exito al obtener los comentarios sin limite", 1, postCommentResponses);
                 }
-                catch (Exception e)
-                {
-                    _logger.LogInformation(e.Message);
-                    return response.GetResponse($"Ha ocurrido un error inesperado {e.Message}", 0, null);
-                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation(e.Message);
+                return response.GetResponse($"Ha ocurrido un error inesperado {e.Message}", 0, null);
             }
         }
 

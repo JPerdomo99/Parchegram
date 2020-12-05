@@ -25,15 +25,8 @@ namespace Parchegram.WebApi.Controllers
             _appSettings = appSettings.Value;
         }
 
-        [HttpGet("GetFrase")]
-        [Authorize]
-        public string GetFrase()
-        {
-            return "Holaa";
-        }
-
         [HttpPost("Login")]
-        public async  Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
+        public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
             Response response = new Response();
             if (ModelState.IsValid)

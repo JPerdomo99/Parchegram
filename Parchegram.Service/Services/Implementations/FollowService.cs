@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Parchegram.Model.Models;
+using Parchegram.Model.Response.Follow;
 using Parchegram.Model.Response.General;
 using Parchegram.Service.Services.Interfaces;
 using System;
@@ -14,7 +15,7 @@ namespace Parchegram.Service.Services.Implementations
 {
     public class FollowService : IFollowService
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<FollowService> _logger;
 
         public FollowService(ILogger<FollowService> logger)
         {
@@ -109,6 +110,35 @@ namespace Parchegram.Service.Services.Implementations
             {
                 _logger.LogInformation(e.Message);
                 return false;
+            }
+        }
+
+        public async Task<Response> GetFollowing(string nameUserFollower)
+        {
+            Response response = new Response();
+            try
+            {
+                using (var db = new ParchegramDBContext())
+                {
+                    User user = await db.User.Where(u => u.NameUser.Equals(nameUserFollower)).FirstOrDefaultAsync();
+                    if (user.Equals(null))
+                        return response.GetResponse("El seguidor no existe", 0, null);
+                    ICollection<FollowingListResponse> followingListResponses = await (from follow in db.Follow
+                                                                                       join userDB in db.User on follow.IdUserFollowing equals userDB.Id
+                                                                                       where follow.IdUserFollower.Equals(user.Id)
+                                                                                       orderby userDB.NameUser
+                                                                                       select new FollowingListResponse
+                                                                                       {
+                                                                                           IdFollowing = userDB.Id,
+                                                                                           NameUserFollowing = userDB.NameUser
+                                                                                       }).ToListAsync();
+                    return response.GetResponse("Followings obtenidos correctamente", 1, followingListResponses);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation(e.Message);
+                return response.GetResponse($"Ha ocurrido un error inesperado {e.Message}", 0, null);
             }
         }
     }

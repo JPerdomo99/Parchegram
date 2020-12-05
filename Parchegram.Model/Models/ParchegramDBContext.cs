@@ -18,6 +18,9 @@ namespace Parchegram.Model.Models
         public virtual DbSet<Comment> Comment { get; set; }
         public virtual DbSet<Follow> Follow { get; set; }
         public virtual DbSet<Like> Like { get; set; }
+        public virtual DbSet<LogDeletePost> LogDeletePost { get; set; }
+        public virtual DbSet<LogInsertPost> LogInsertPost { get; set; }
+        public virtual DbSet<Message> Message { get; set; }
         public virtual DbSet<Post> Post { get; set; }
         public virtual DbSet<Share> Share { get; set; }
         public virtual DbSet<TypePost> TypePost { get; set; }
@@ -88,6 +91,45 @@ namespace Parchegram.Model.Models
                     .HasForeignKey(d => d.IdUser)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Like_User");
+            });
+
+            modelBuilder.Entity<LogDeletePost>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.Property(e => e.Date).HasColumnType("datetime");
+
+                entity.Property(e => e.Description).HasMaxLength(3000);
+            });
+
+            modelBuilder.Entity<LogInsertPost>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.Property(e => e.Date).HasColumnType("datetime");
+
+                entity.Property(e => e.Description).HasMaxLength(3000);
+            });
+
+            modelBuilder.Entity<Message>(entity =>
+            {
+                entity.Property(e => e.Date).HasColumnType("datetime");
+
+                entity.Property(e => e.MessageText)
+                    .IsRequired()
+                    .HasMaxLength(3000);
+
+                entity.HasOne(d => d.IdUserReceiverNavigation)
+                    .WithMany(p => p.MessageIdUserReceiverNavigation)
+                    .HasForeignKey(d => d.IdUserReceiver)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Message_UserReceiver");
+
+                entity.HasOne(d => d.IdUserSenderNavigation)
+                    .WithMany(p => p.MessageIdUserSenderNavigation)
+                    .HasForeignKey(d => d.IdUserSender)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Message_UserSender");
             });
 
             modelBuilder.Entity<Post>(entity =>

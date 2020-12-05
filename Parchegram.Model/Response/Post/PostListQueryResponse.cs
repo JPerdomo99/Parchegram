@@ -13,7 +13,7 @@ namespace Parchegram.Model.Response.Post
 
         public Share QueryShare { get; set; }
 
-        public Follow QueryFollow { get; set; }
+        public Models.Follow QueryFollow { get; set; }
 
         public Models.User QueryUserShare { get; set; }
 
