@@ -28,10 +28,10 @@ namespace Parchegram.Service.Services.Implementations
                 using (var db = new ParchegramDBContext())
                 {
                     User senderDB = await db.User.Where(u => u.NameUser.Equals(sender)).FirstOrDefaultAsync();
-                    if (senderDB.Equals(null))
+                    if (senderDB == null)
                         return response.GetResponse("El sender no existe", 0, null);
                     User receiverDB = await db.User.Where(u => u.NameUser.Equals(receiver)).FirstOrDefaultAsync();
-                    if (receiverDB.Equals(null))
+                    if (receiverDB == null)
                         return response.GetResponse("El receiver no existe", 0, null);
                     ICollection<MessageListResponse> messages = await (from message in db.Message
                                                            join senderM in db.User on message.IdUserSender equals senderM.Id

@@ -121,17 +121,28 @@ namespace Parchegram.Service.Services.Implementations
                 using (var db = new ParchegramDBContext())
                 {
                     User user = await db.User.Where(u => u.NameUser.Equals(nameUserFollower)).FirstOrDefaultAsync();
-                    if (user.Equals(null))
+                    if (user == null)
                         return response.GetResponse("El seguidor no existe", 0, null);
-                    ICollection<FollowingListResponse> followingListResponses = await (from follow in db.Follow
-                                                                                       join userDB in db.User on follow.IdUserFollowing equals userDB.Id
-                                                                                       where follow.IdUserFollower.Equals(user.Id)
-                                                                                       orderby userDB.NameUser
-                                                                                       select new FollowingListResponse
-                                                                                       {
-                                                                                           IdFollowing = userDB.Id,
-                                                                                           NameUserFollowing = userDB.NameUser
-                                                                                       }).ToListAsync();
+
+                    IQueryable<FollowingListResponse> query1 = from message in db.Message
+                                                               from userDB in db.User
+                                                               where (message.IdUserSender.Equals(userDB.Id) || message.IdUserReceiver.Equals(userDB.Id)) &&
+                                                               ((message.IdUserSender.Equals(1) || message.IdUserReceiver.Equals(1)) && userDB.Id != 1)
+                                                               select new FollowingListResponse 
+                                                               {
+                                                                   IdFollowing = userDB.Id,
+                                                                   NameUserFollowing = userDB.NameUser
+                                                               };
+                    IQueryable<FollowingListResponse> query2 = from follow in db.Follow
+                                                               join userDB in db.User on follow.IdUserFollowing equals userDB.Id
+                                                               where follow.IdUserFollower.Equals(user.Id)
+                                                               select new FollowingListResponse
+                                                               {
+                                                                   IdFollowing = userDB.Id,
+                                                                   NameUserFollowing = userDB.NameUser
+                                                               };
+                    IQueryable<FollowingListResponse> query3 = query1.Union(query2).OrderBy(q => q.NameUserFollowing);
+                    IEnumerable<FollowingListResponse> followingListResponses = await query3.ToListAsync();
                     return response.GetResponse("Followings obtenidos correctamente", 1, followingListResponses);
                 }
             }

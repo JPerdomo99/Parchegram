@@ -34,11 +34,11 @@ namespace Parchegram.WebApi.Hubs
                     User receiverDB = await db.User.Where(u => u.NameUser.Equals(receiver)).FirstOrDefaultAsync();
                     await db.Message.AddAsync(new Message(senderDB.Id, receiverDB.Id, message));
                     await db.SaveChangesAsync();
-                } 
+                }
                 catch (Exception e)
                 {
                     string exceptionMessage = e.Message;
-                } 
+                }
             }
         }
 
