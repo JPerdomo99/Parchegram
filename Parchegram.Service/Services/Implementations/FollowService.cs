@@ -127,8 +127,8 @@ namespace Parchegram.Service.Services.Implementations
                     IQueryable<FollowingListResponse> query1 = from message in db.Message
                                                                from userDB in db.User
                                                                where (message.IdUserSender.Equals(userDB.Id) || message.IdUserReceiver.Equals(userDB.Id)) &&
-                                                               ((message.IdUserSender.Equals(1) || message.IdUserReceiver.Equals(1)) && userDB.Id != 1)
-                                                               select new FollowingListResponse 
+                                                               ((message.IdUserSender.Equals(user.Id) || message.IdUserReceiver.Equals(user.Id)) && userDB.Id != user.Id)
+                                                               select new FollowingListResponse
                                                                {
                                                                    IdFollowing = userDB.Id,
                                                                    NameUserFollowing = userDB.NameUser

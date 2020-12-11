@@ -25,7 +25,7 @@ namespace Parchegram.WebApi.Hubs
 
         public async Task SendMessage(string sender, string receiver, string message)
         {
-            await Clients.Clients(GetConnectionId(sender), GetConnectionId(receiver)).SendAsync("ReceiveMessage", sender, receiver, message);
+            await Clients.Clients(GetConnectionId(sender), GetConnectionId(receiver)).SendAsync("ReceiveMessage", new { Sender = sender, Receiver = receiver, Message = message });
             using (var db = new ParchegramDBContext())
             {
                 try
