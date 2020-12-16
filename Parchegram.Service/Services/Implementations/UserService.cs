@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Parchegram.Model.Common;
@@ -13,6 +14,7 @@ using Parchegram.Service.ClassesSupport;
 using Parchegram.Service.Services.Interfaces;
 using Parchegram.Service.Tools;
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -429,6 +431,32 @@ namespace Parchegram.Service.Services.Implementations
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
             return tokenHandler.WriteToken(token);
+        }
+
+        public async Task<Response> GetUsers(string nameUserOrEmail)
+        {
+            Response response = new Response();
+            try
+            {
+                using (var db = new ParchegramDBContext())
+                {
+                    IEnumerable<UserSearchResponse> userSearchResponses = await (from user in db.User
+                                                                                 where user.NameUser.StartsWith(nameUserOrEmail)
+                                                                                 || user.Email.StartsWith(nameUserOrEmail)
+                                                                                 orderby user.NameUser
+                                                                                 select new UserSearchResponse
+                                                                                 {
+                                                                                     Id = user.Id,
+                                                                                     NameUser = user.NameUser
+                                                                                 }).ToListAsync();
+                    return response.GetResponse("Usuarios coincidentes obtenidos correctamente", 1, userSearchResponses);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogInformation($"Ha ocurrido un error inesperado {e.Message}");
+                return response.GetResponse($"Ha ocurrido un error inesperado {e.Message}", 0, null);
+            }
         }
     }
 }

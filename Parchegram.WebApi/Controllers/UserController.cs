@@ -115,7 +115,7 @@ namespace Parchegram.WebApi.Controllers
         }
 
         [HttpGet("GetByNameUser/{nameUser}/{nameUserSession}")]
-        public async Task<IActionResult> GetByNameUser(string nameUser, string nameUserSession)
+        public async Task<IActionResult> GetByNameUser([FromRoute] string nameUser, [FromRoute] string nameUserSession)
         {
             Response result = await _userService.GetUserByNameUser(nameUser, nameUserSession);
             return Ok(result);
@@ -125,6 +125,13 @@ namespace Parchegram.WebApi.Controllers
         public IActionResult ActionUpload()
         {
             return Ok(true);
+        }
+
+        [HttpGet("Get/{nameUserOrEmail}")]
+        public async Task<IActionResult> Get([FromRoute] string nameUserOrEmail)
+        {
+            Response response = await _userService.GetUsers(nameUserOrEmail);
+            return Ok(response);
         }
     }
 }
